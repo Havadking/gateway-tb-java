@@ -1,6 +1,7 @@
 package mqtt;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -39,23 +40,23 @@ public class MQTTClient {
         options.setConnectionTimeout(10);  // 超时时间（秒）
         options.setUserName(username);
 
-        // 设置回调函数
-        client.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable throwable) {
-                System.err.println("连接丢失: " + throwable.getMessage());
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                System.out.println("收到消息: [主题] " + topic + " [内容] " + new String(message.getPayload()));
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
-                System.out.println("消息发送完成: " + iMqttDeliveryToken.getMessageId());
-            }
-        });
+//         设置回调函数
+//        client.setCallback(new MqttCallback() {
+//            @Override
+//            public void connectionLost(Throwable throwable) {
+//                System.err.println("连接丢失: " + throwable.getMessage());
+//            }
+//
+//            @Override
+//            public void messageArrived(String topic, MqttMessage message) throws Exception {
+//                System.out.println("收到消息: [主题] " + topic + " [内容] " + new String(message.getPayload()));
+//            }
+//
+//            @Override
+//            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+//                System.out.println("消息发送完成: " + iMqttDeliveryToken.getMessageId());
+//            }
+//        });
 
         // 开始进行mqtt连接
         System.out.println("正在连接到 MQTT Broker...");
@@ -87,5 +88,9 @@ public class MQTTClient {
     // 获取连接状态
     public boolean isConnected() {
         return client != null && client.isConnected();
+    }
+
+    public void subscribe(String topic, IMqttMessageListener messageListener) throws MqttException {
+        client.subscribe(topic, messageListener);
     }
 }
