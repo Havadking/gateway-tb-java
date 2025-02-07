@@ -50,7 +50,9 @@ public class ServerCom {
                         new ChannelInitializer<NioSocketChannel>() {
                             @Override
                             protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                                // 1. 先将传入的数据解析成String格式的
                                 nioSocketChannel.pipeline().addLast(new StringDecoder());
+                                // 2. 进行后续的管理和处理
                                 nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter(){
                                     @Override
                                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

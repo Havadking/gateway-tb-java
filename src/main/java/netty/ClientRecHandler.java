@@ -3,14 +3,16 @@ package netty;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @program: gateway-netty
- * @description:
+ * @description: 用于处理连接发送的数据
  * @author: Havad
  * @create: 2025-01-20 17:52
  **/
 
+@Slf4j
 public class ClientRecHandler extends SimpleChannelInboundHandler<String> {
     // 在Handler构造函数里拿到外部传进来的channelGroup或其他集合
     private final ChannelGroup channelGroup;
@@ -23,8 +25,10 @@ public class ClientRecHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         // 在这里你可以先什么都不做，也可以记录一下正在建立连接的客户端地址
-        System.out.println("有新连接尝试进来: " + ctx.channel().remoteAddress());
+//        System.out.println("有新连接尝试进来: " + ctx.channel().remoteAddress());
+        log.info("有新连接尝试进来: {}",ctx.channel().remoteAddress());
         super.channelActive(ctx);
+
     }
 
     @Override
@@ -33,8 +37,7 @@ public class ClientRecHandler extends SimpleChannelInboundHandler<String> {
         if (isValid(msg)) {
             // 符合规则就将连接纳入管理
             channelGroup.add(ctx.channel());
-            System.out.println("连接已加入管理集合: " + ctx.channel().id());
-
+            log.info("连接已加入管理集合:{} ", ctx.channel().id());
             // 这个 Handler 可以继续收后续的消息。此时你可以考虑修改 pipeline，
             // 或者保留本 Handler 根据需求来处理更多的数据。
             // 例如：ctx.pipeline().remove(this); // 如果你只关心首包
