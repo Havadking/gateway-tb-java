@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  **/
 
 @Slf4j
-public class AuthDevice {
+public class AuthDeviceUtil {
 
     /**
      * 调用设备认证接口，返回 content 字段的值
