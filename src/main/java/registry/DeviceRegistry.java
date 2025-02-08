@@ -1,6 +1,8 @@
 package registry;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
 import util.LogUtils;
 
@@ -29,6 +31,14 @@ public class DeviceRegistry {
         LogUtils.info(this.getClass().getSimpleName(),"register", deviceId, "设备注册");
         deviceMap.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
+
+        // 添加 ChannelFutureListener 来监听连接关闭事件
+        channel.closeFuture().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                unregister(deviceId);
+            }
+        });
     }
 
     /**
@@ -47,7 +57,10 @@ public class DeviceRegistry {
      * @param deviceId 设备ID
      */
     public void unregister(String deviceId) {
+        LogUtils.info(this.getClass().getSimpleName(),"unregister", deviceId, "设备注销");
         deviceMap.remove(deviceId);
+
+        System.out.println("暂停一下用于调试");
     }
 
 }

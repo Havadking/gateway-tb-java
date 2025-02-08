@@ -34,13 +34,11 @@ public class AuthenticationHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg); //将消息传递到下一个Inbound
             ctx.pipeline().remove(this); // 移除自身
 
-            System.out.println("注册表暂停一下");
+            System.out.println("暂停一下用于调试");
         } else {
             LogUtils.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证失败");
             ctx.close();
-            // (可选) 发送认证失败响应
+            // todo 发送认证失败响应
         }
     }
-
-
 }
