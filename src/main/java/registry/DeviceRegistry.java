@@ -4,6 +4,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
+import lombok.AllArgsConstructor;
+import mqtt.MqttSender;
 import util.LogUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,11 +17,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @create: 2025-02-07 17:21
  **/
 
+@AllArgsConstructor
 public class DeviceRegistry {
     /**
      * 设备映射表，使用ConcurrentHashMap确保线程安全
      */
     private final ConcurrentHashMap<String, Channel> deviceMap = new ConcurrentHashMap<>();
+
+    private MqttSender mqttSender;
 
     /**
      * 注册设备与通道的映射关系。
@@ -31,6 +36,8 @@ public class DeviceRegistry {
         LogUtils.info(this.getClass().getSimpleName(),"register", deviceId, "设备注册");
         deviceMap.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
+        // 注册成功后，向Thingsboard声明设备通过网关上线
+        mqttSender.sendDeviceConnected(deviceId);
 
         // 添加 ChannelFutureListener 来监听连接关闭事件
         channel.closeFuture().addListener(new ChannelFutureListener() {
@@ -59,6 +66,8 @@ public class DeviceRegistry {
     public void unregister(String deviceId) {
         LogUtils.info(this.getClass().getSimpleName(),"unregister", deviceId, "设备注销");
         deviceMap.remove(deviceId);
+        // 向Thingsboard声明设备断连
+        mqttSender.sendDeviceDisconnected(deviceId);
 
         System.out.println("暂停一下用于调试");
     }

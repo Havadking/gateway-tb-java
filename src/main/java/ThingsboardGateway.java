@@ -9,6 +9,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import lombok.extern.slf4j.Slf4j;
+import mqtt.MqttConnection;
+import mqtt.MqttSender;
+import org.eclipse.paho.client.mqttv3.MqttClient;
 import registry.DeviceRegistry;
 
 /**
@@ -24,7 +27,10 @@ public class ThingsboardGateway {
         // 0. 初始化 (配置、连接 MQTT Broker 等)
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        DeviceRegistry deviceRegistry = new DeviceRegistry();
+        MqttConnection mqttConnection = new MqttConnection();
+        MqttClient mqttClient = mqttConnection.getMqttClient();
+        MqttSender mqttSender = new MqttSender(mqttClient);
+        DeviceRegistry deviceRegistry = new DeviceRegistry(mqttSender);
 
         try {
             ServerBootstrap b = new ServerBootstrap();
