@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
  * @create: 2025-02-07 16:47
  **/
 @Slf4j
-public class DecodeUtil {
+public class PduUtil {
     /**
      * 解析PDU字符串
      *
@@ -223,6 +223,15 @@ public class DecodeUtil {
     }
 
 
+    public static String getDeviceNo(String pdu) {
+        if (pdu.length() < 18) {
+            log.error("方法{}, 获取设备编号失败，解析失败的pdu为{}", "getDeviceNo", pdu);
+        }
+        String body = getBody(pdu);
+        return body.substring(0, 18).replaceAll("\\s+", "");
+    }
+
+
 
     public static void main(String[] args) {
         // 示例 PDU 数据
@@ -232,7 +241,7 @@ public class DecodeUtil {
 //        log.info(getBody(pdu));
 //        log.info(String.valueOf(getFuncNo(pdu)));
 //        log.info(String.valueOf(getLength(pdu)));
-        boolean isValidate = validateCheck(pdu);
-
+//        boolean isValidate = validateCheck(pdu);
+        log.info(getDeviceNo(pdu));
     }
 }

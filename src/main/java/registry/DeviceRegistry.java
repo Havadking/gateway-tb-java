@@ -2,6 +2,7 @@ package registry;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import util.LogUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,6 +26,7 @@ public class DeviceRegistry {
      * @param channel  通道对象
      */
     public void register(String deviceId, Channel channel) {
+        LogUtils.info(this.getClass().getSimpleName(),"register", deviceId, "设备注册");
         deviceMap.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
     }

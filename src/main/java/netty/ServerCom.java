@@ -1,5 +1,6 @@
 package netty;
 
+import handler.AuthenticationHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -8,6 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
+import registry.DeviceRegistry;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,6 +25,8 @@ public class ServerCom {
 
     // 用来保存收到的消息
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
+
+    private static final DeviceRegistry deviceRegistry = new DeviceRegistry();
 
 
 
@@ -53,13 +57,14 @@ public class ServerCom {
                                 // 1. 先将传入的数据解析成String格式的
                                 nioSocketChannel.pipeline().addLast(new StringDecoder());
                                 // 2. 进行后续的管理和处理
-                                nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter(){
-                                    @Override
-                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                        System.out.println("收到客户端发来的数据: " + msg);
-                                        messageQueue.put((String) msg);
-                                    }
-                                });
+//                                nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter(){
+//                                    @Override
+//                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+//                                        System.out.println("收到客户端发来的数据: " + msg);
+//                                        messageQueue.put((String) msg);
+//                                    }
+//                                });
+                                nioSocketChannel.pipeline().addLast(new AuthenticationHandler(deviceRegistry));
                             }
                         }
                 )
