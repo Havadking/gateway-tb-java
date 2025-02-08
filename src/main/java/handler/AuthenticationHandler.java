@@ -26,19 +26,28 @@ public class AuthenticationHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         LogUtils.info(this.getClass().getName(), "channelRead读取第一条数据", msg, "第一次读取");
-        String deviceNo = PduUtil.getDeviceNo((String) msg);
-        if (AuthDeviceUtil.getDeviceAuth(deviceNo)) {
-            LogUtils.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证成功");
-            deviceRegistry.register(deviceNo, ctx.channel());
-            ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(deviceNo);
-            ctx.fireChannelRead(msg); //将消息传递到下一个Inbound
-            ctx.pipeline().remove(this); // 移除自身
-
-            System.out.println("暂停一下用于调试");
-        } else {
-            LogUtils.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证失败");
+        // 验证数据合法性
+        if (!PduUtil.validateCheck((String) msg)) {
+            LogUtils.info(this.getClass().getName(), "channelRead验证第一条数据", msg, "验证失败");
             ctx.close();
-            // todo 发送认证失败响应
+        } else {
+            LogUtils.info(this.getClass().getName(), "channelRead验证第一条数据", msg, "验证成功");
+            String deviceNo = PduUtil.getDeviceNo((String) msg);
+            if (AuthDeviceUtil.getDeviceAuth(deviceNo)) {
+                LogUtils.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证成功");
+                deviceRegistry.register(deviceNo, ctx.channel());
+                ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(deviceNo);
+                //将消息传递到下一个Inbound
+                ctx.fireChannelRead(msg);
+                // 移除自身
+                ctx.pipeline().remove(this);
+
+                System.out.println("暂停一下用于调试");
+            } else {
+                LogUtils.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证失败");
+                ctx.close();
+                // todo 发送认证失败响应
+            }
         }
     }
 }

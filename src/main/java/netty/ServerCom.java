@@ -26,7 +26,8 @@ public class ServerCom {
     // 用来保存收到的消息
     private static final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
 
-    private static final DeviceRegistry deviceRegistry = new DeviceRegistry();
+    static DeviceRegistry deviceRegistry = new DeviceRegistry();
+
 
 
 

@@ -35,7 +35,7 @@ public class DeviceRegistry {
         // 添加 ChannelFutureListener 来监听连接关闭事件
         channel.closeFuture().addListener(new ChannelFutureListener() {
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
+            public void operationComplete(ChannelFuture future) {
                 unregister(deviceId);
             }
         });
