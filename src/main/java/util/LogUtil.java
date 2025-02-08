@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  **/
 
 @Slf4j
-public class LogUtils {
+public class LogUtil {
 
     /**
      * 记录方法调用的信息日志

@@ -2,6 +2,7 @@ package disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,8 +14,8 @@ import org.slf4j.LoggerFactory;
  **/
 
 @AllArgsConstructor
+@Slf4j
 public class DeviceDataEventProducer {
-    private static final Logger log = LoggerFactory.getLogger(DeviceDataEventProducer.class);
     public final RingBuffer<DeviceDataEvent> ringBuffer;
 
     /**

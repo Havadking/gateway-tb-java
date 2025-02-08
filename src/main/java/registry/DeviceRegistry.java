@@ -6,7 +6,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import mqtt.MqttSender;
-import util.LogUtils;
+import util.LogUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,7 +33,7 @@ public class DeviceRegistry {
      * @param channel  通道对象
      */
     public void register(String deviceId, Channel channel) {
-        LogUtils.info(this.getClass().getSimpleName(),"register", deviceId, "设备注册");
+        LogUtil.info(this.getClass().getSimpleName(),"register", deviceId, "设备注册");
         deviceMap.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
         // 注册成功后，向Thingsboard声明设备通过网关上线
@@ -64,7 +64,7 @@ public class DeviceRegistry {
      * @param deviceId 设备ID
      */
     public void unregister(String deviceId) {
-        LogUtils.info(this.getClass().getSimpleName(),"unregister", deviceId, "设备注销");
+        LogUtil.info(this.getClass().getSimpleName(),"unregister", deviceId, "设备注销");
         deviceMap.remove(deviceId);
         // 向Thingsboard声明设备断连
         mqttSender.sendDeviceDisconnected(deviceId);

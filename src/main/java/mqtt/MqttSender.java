@@ -10,8 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import util.LogUtils;
-import util.PduUtil;
+import util.LogUtil;
+import util.PDUUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.CONNECT_TOPIC, message);
-            LogUtils.info(this.getClass().getName(), "sendDeviceConnected", deviceNo, "设备连接");
+            LogUtil.info(this.getClass().getName(), "sendDeviceConnected", deviceNo, "设备连接");
         } catch (JsonProcessingException e) {
             log.error("生成设备连接 JSON 消息失败：{}", e.getMessage());
             throw new RuntimeException(e);
@@ -105,7 +105,7 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.DISCONNECT_TOPIC, message);
-            LogUtils.info(this.getClass().getName(), "sendDeviceDisconnected", deviceNo, "设备断开");
+            LogUtil.info(this.getClass().getName(), "sendDeviceDisconnected", deviceNo, "设备断开");
         } catch (JsonProcessingException e) {
             log.error("生成设备断开 JSON 消息失败：{}", e.getMessage());
             throw new RuntimeException(e);
@@ -118,7 +118,7 @@ public class MqttSender {
 
     public void sendDeviceTelemetry(String PDU) {
         // 获取相关参数
-        String deviceNo = PduUtil.getDeviceNo(PDU);
+        String deviceNo = PDUUtil.getDeviceNo(PDU);
         String data = PDU.substring(4);
         // 使用 Jackson 将 Map 转换成 JSON 字符串
         try {
@@ -140,7 +140,7 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-            LogUtils.info(this.getClass().getName(), "sendDeviceTelemetry", PDU, "发送遥测");
+            LogUtil.info(this.getClass().getName(), "sendDeviceTelemetry", PDU, "发送遥测");
         } catch (JsonProcessingException e) {
             log.error("生成遥测消息 JSON 消息失败：{}", e.getMessage());
             throw new RuntimeException(e);

@@ -8,8 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttSender;
 import registry.DeviceRegistry;
-import util.LogUtils;
-import util.PduUtil;
+import util.LogUtil;
+import util.PDUUtil;
 
 /**
  * @program: gateway-netty
@@ -33,17 +33,27 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
     private final DeviceRegistry deviceRegistry;
 
 
-
+    /**
+     * 处理设备数据事件。
+     * <p>
+     * 当接收到设备数据事件时，根据事件类型将数据发送到Thingsboard或者设备，
+     * 并记录相应的日志信息。
+     *
+     * @param event      设备数据事件对象
+     * @param sequence   事件序列号
+     * @param endOfBatch 标识是否为批处理结束的事件
+     * @throws Exception 在处理事件过程中可能抛出的异常
+     */
     @Override
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
             // 由设备发往Thingsboard
             mqttSender.sendDeviceTelemetry(event.getValue());
-            LogUtils.info(this.getClass().getName(), "onEvent", event.getValue(), "由设备发往Thingsboard");
+            LogUtil.info(this.getClass().getName(), "onEvent", event.getValue(), "由设备发往Thingsboard");
             log.info("消费了{}", sequence);
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
             // 由Thingsboard发送到设备
-            Channel channel = deviceRegistry.getChannel(PduUtil.getDeviceNo(event.getValue()));
+            Channel channel = deviceRegistry.getChannel(PDUUtil.getDeviceNo(event.getValue()));
             if (channel != null && channel.isActive()) {
                 try {
                     // 从 Channel 的 ByteBufAllocator 分配 ByteBuf
@@ -53,7 +63,7 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
                         buf.writeBytes(event.getValue().getBytes(CharsetUtil.UTF_8));
                         // 写入并刷新 Channel
                         channel.writeAndFlush(buf);
-                        LogUtils.info(this.getClass().getName(), "onEvent", event.getValue(), "由Thingsboard发送到设备");
+                        LogUtil.info(this.getClass().getName(), "onEvent", event.getValue(), "由Thingsboard发送到设备");
                         log.info("消费了{}", sequence);
                     } catch (Exception e) {
                         // 确保在异常情况下释放 ByteBuf

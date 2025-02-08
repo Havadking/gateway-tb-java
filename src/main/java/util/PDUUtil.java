@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
  * @create: 2025-02-07 16:47
  **/
 @Slf4j
-public class PduUtil {
+public class PDUUtil {
     /**
      * 解析PDU字符串
      *
