@@ -39,7 +39,7 @@ public class AuthenticationHandler extends ChannelInboundHandlerAdapter {
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(deviceNo);
                 //将消息传递到下一个Inbound
                 ctx.fireChannelRead(msg);
-                // 移除自身
+                // 移除自身,避免多次认证
                 ctx.pipeline().remove(this);
 
                 System.out.println("暂停一下用于调试");
