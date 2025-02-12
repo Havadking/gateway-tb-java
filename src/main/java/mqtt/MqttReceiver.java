@@ -14,6 +14,11 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @program: gateway-netty
  * @description: MQTT 接收器
@@ -32,6 +37,21 @@ public class MqttReceiver implements MqttCallback {
      * MQTT客户端实例。
      */
     private final MqttClient mqttClient;
+
+    /**
+     * 定时任务执行器，使用单线程的ScheduledExecutorService实现。
+     */
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    /**
+     * 当前重连次数
+     */
+    private final AtomicInteger reconnectAttempts = new AtomicInteger(0);
+
+    /**
+     * 是否正在重连
+     */
+    private volatile boolean isReconnecting = false;
 
     public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient) {
         this.producer = producer;
@@ -52,44 +72,65 @@ public class MqttReceiver implements MqttCallback {
      */
     @Override
     public void connectionLost(Throwable cause) {
-        // todo
-        // *** 实现：MQTT 连接丢失处理 ***
-        // 例如：记录日志、尝试重连等
         log.error("MQTT connection lost: {}", cause.getMessage());
-        // 可以在这里实现 MQTT 重连逻辑
 
+        // 避免重复重连
+        if (isReconnecting) {
+            return;
+        }
+        isReconnecting = true;
+        // 重置重连计数器
+        reconnectAttempts.set(0);
+        scheduleReconnect();
     }
 
     /**
-     * This method is called when a message arrives from the server.
+     * 定时重新连接MQTT代理。
+     * <p>
+     * 本方法通过指数退避算法计算延时，并在指定时间后尝试重新连接MQTT代理。
+     * 若重连尝试次数未超过最大限制，将继续尝试连接；否则，将停止重连尝试并记录错误日志。
      *
-     * <p>
-     * This method is invoked synchronously by the MQTT client. An
-     * acknowledgment is not sent back to the server until this
-     * method returns cleanly.</p>
-     * <p>
-     * If an implementation of this method throws an <code>Exception</code>, then the
-     * client will be shut down.  When the client is next re-connected, any QoS
-     * 1 or 2 messages will be redelivered by the server.</p>
-     * <p>
-     * Any additional messages which arrive while an
-     * implementation of this method is running, will build up in memory, and
-     * will then back up on the network.</p>
-     * <p>
-     * If an application needs to persist data, then it
-     * should ensure the data is persisted prior to returning from this method, as
-     * after returning from this method, the message is considered to have been
-     * delivered, and will not be reproducible.</p>
-     * <p>
-     * It is possible to send a new message within an implementation of this callback
-     * (for example, a response to this message), but the implementation must not
-     * disconnect the client, as it will be impossible to send an acknowledgment for
-     * the message being processed, and a deadlock will occur.</p>
+     * @see GatewayConfig#RECEIVER_RECONNECT_RETRY
+     */
+    private void scheduleReconnect() {
+        if (reconnectAttempts.get() < GatewayConfig.RECEIVER_RECONNECT_RETRY) {
+            // 指数退避
+            long delay = (long) Math.pow(2, reconnectAttempts.getAndIncrement());
+            log.info("Attempting to reconnect to MQTT broker in {} seconds...", delay);
+
+            scheduler.schedule(() -> {
+                try {
+                    if (!mqttClient.isConnected()) {
+                        mqttClient.reconnect();
+                        log.info("Successfully reconnected to MQTT broker.");
+                        // 重连成功，重置标志位
+                        isReconnecting = false;
+                        //重置计数器
+                        reconnectAttempts.set(0);
+                        //重新订阅
+                        start();
+                    }
+                } catch (Exception e) {
+                    log.info("Failed to reconnect to MQTT broker: {}, retry is {}", e.getMessage(), reconnectAttempts.get());
+                    // 继续尝试重连
+                    scheduleReconnect();
+                }
+            }, delay, TimeUnit.SECONDS);
+        } else {
+            log.error("【严重】MQTT订阅失败，已达到最大重试次数【严重】");
+            // 达到最大重连次数，停止重连
+            isReconnecting = false;
+            // todo 是否需要发送短信提醒
+        }
+    }
+
+
+    /**
+     * 当消息到达时调用的方法
      *
-     * @param topic   name of the topic on the message was published to
-     * @param message the actual message.
-     * @throws Exception if a terminal error has occurred, and the client should be
-     *                   shut down.
+     * @param topic   消息主题
+     * @param message MQTT消息内容
+     * @throws Exception 当处理消息过程中发生错误时抛出异常
      */
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {

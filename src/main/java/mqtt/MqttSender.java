@@ -29,6 +29,8 @@ import java.util.Random;
 @Slf4j
 public class MqttSender {
     private final MqttClient mqttClient;
+    private static final Random RANDOM = new Random();
+
 
     /**
      * 发送设备已连接的通知
@@ -123,11 +125,17 @@ public class MqttSender {
      * @param PDU 要发送的数据协议数据单元（Protocol Data Unit）
      * @throws RuntimeException 当生成JSON消息或发布MQTT消息失败时抛出运行时异常
      */
-    public void sendDeviceTelemetry(String PDU) {
-        int maxRetries = 3;  // 最大重试次数
+    public void sendDeviceTelemetry(String PDU) throws MqttException {
+        int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
         int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
         int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
         int currentRetry = 0;
+
+        // 创建 JSON 对象
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode msg = objectMapper.createObjectNode();
+        ArrayNode nameArray = objectMapper.createArrayNode();
+        ObjectNode nameObject = objectMapper.createObjectNode();
 
         while (currentRetry <= maxRetries) {
             try {
@@ -135,11 +143,6 @@ public class MqttSender {
                 String deviceNo = PDUUtil.getDeviceNo(PDU);
                 String data = PDU.substring(4);
 
-                // 创建 JSON 对象
-                ObjectMapper objectMapper = new ObjectMapper();
-                ObjectNode msg = objectMapper.createObjectNode();
-                ArrayNode nameArray = objectMapper.createArrayNode();
-                ObjectNode nameObject = objectMapper.createObjectNode();
                 nameObject.put("INFO", data);
                 nameArray.add(nameObject);
                 msg.set(deviceNo, nameArray);
@@ -160,6 +163,10 @@ public class MqttSender {
                 break;
 
             } catch (Exception e) {
+                if (!mqttClient.isConnected()) {
+                    mqttClient.reconnect();
+                }
+
                 currentRetry++;
 
                 if (currentRetry > maxRetries) {
@@ -169,7 +176,7 @@ public class MqttSender {
 
                 // 计算指数退避时间
                 int retryIntervalMs = Math.min(
-                        baseIntervalMs * (1 << (currentRetry - 1)) + new Random().nextInt(1000),
+                        baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
                         maxIntervalMs
                 );
 

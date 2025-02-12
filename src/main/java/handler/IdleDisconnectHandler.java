@@ -36,12 +36,6 @@ public class IdleDisconnectHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        /*
-        这个方法只有在以下情况下才会被调用：
-            1. 当 IdleStateHandler 检测到读空闲超时
-            2. 当 IdleStateHandler 生成了一个 IdleStateEvent
-            3. 当这个事件通过 pipeline 传递到 IdleDisconnectHandler
-         */
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
             if (e.state() == IdleState.READER_IDLE) {
