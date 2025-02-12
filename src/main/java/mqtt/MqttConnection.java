@@ -18,7 +18,10 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 @Getter
 @Slf4j
 public class MqttConnection {
-    private MqttClient mqttClient;
+    /**
+     * MQTT客户端实例。
+     */
+    private final MqttClient mqttClient;
 
     public MqttConnection() throws MqttException {
         // 1. 创建持久化对象

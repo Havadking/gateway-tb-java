@@ -62,7 +62,8 @@ public class ThingsboardGateway {
         // 5. 启动 Disruptor
         disruptor.start();
 
-
+        // 6. 启动 MQTT 接收器
+        mqttReceiver.start();
 
         // 7. Netty
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -93,7 +94,5 @@ public class ThingsboardGateway {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
-
-
     }
 }

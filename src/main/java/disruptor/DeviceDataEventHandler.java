@@ -48,23 +48,23 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
             // 由设备发往Thingsboard
-            mqttSender.sendDeviceTelemetry(event.getValue());
-            LogUtil.info(this.getClass().getName(), "onEvent", event.getValue(), "由设备发往Thingsboard");
-            log.info("消费了{}", sequence);
+            mqttSender.sendDeviceTelemetry(event.getValue().getMsg());
+            LogUtil.info(this.getClass().getName(), "onEvent", event.getValue().getMsg(), "由设备发往Thingsboard");
+            log.info("【发往thingsboard】消费了{}", sequence);
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
             // 由Thingsboard发送到设备
-            Channel channel = deviceRegistry.getChannel(PDUUtil.getDeviceNo(event.getValue()));
+            Channel channel = deviceRegistry.getChannel(event.getValue().getDeviceId());
             if (channel != null && channel.isActive()) {
                 try {
                     // 从 Channel 的 ByteBufAllocator 分配 ByteBuf
                     ByteBuf buf = channel.alloc().buffer();
                     try {
                         // 写入数据
-                        buf.writeBytes(event.getValue().getBytes(CharsetUtil.UTF_8));
+                        buf.writeBytes(event.getValue().getMsg().getBytes(CharsetUtil.UTF_8));
                         // 写入并刷新 Channel
                         channel.writeAndFlush(buf);
                         LogUtil.info(this.getClass().getName(), "onEvent", event.getValue(), "由Thingsboard发送到设备");
-                        log.info("消费了{}", sequence);
+                        log.info("【发往设备】消费了{}", sequence);
                     } catch (Exception e) {
                         // 确保在异常情况下释放 ByteBuf
                         buf.release();

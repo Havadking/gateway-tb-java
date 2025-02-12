@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PDUUtil {
     /**
-     * 解析PDU字符串
+     * 解析PDU字符串(测试用)
      *
      * @param pdu 需要解析的PDU字符串
      * @throws IllegalArgumentException 当PDU字符串为空或长度小于15时抛出异常
@@ -101,7 +101,7 @@ public class PDUUtil {
      * @return length 字段对应的整数值
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 length 字段时抛出异常
      */
-    public static int getLength(String pdu) {
+    private static int getLength(String pdu) {
         if (pdu == null || pdu.length() < 8) {
             throw new IllegalArgumentException("PDU 数据无效或长度不足以获取 length 字段！");
         }
@@ -114,7 +114,7 @@ public class PDUUtil {
     }
 
     /**
-     * 获取 PDU 中的 func_no 字段值
+     * 获取 PDU 中的 func_no 字段值 (暂时不用)
      *
      * @param pdu 需要解析的 PDU 字符串
      * @return func_no 字段对应的字符串（2 个字符）
@@ -146,7 +146,7 @@ public class PDUUtil {
      * @return body 字段对应的字符串
      * @throws IllegalArgumentException 当 PDU 数据无效或无法获取完整 body 字段时抛出异常
      */
-    public static String getBody(String pdu) {
+    private static String getBody(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() != length) {
             log.warn("【警告】实际 PDU 长度({})与 length 字段({})不符！", pdu.length(), length);
@@ -167,14 +167,14 @@ public class PDUUtil {
 
     /**
      * 获取 PDU 中的 check 字段值
-     *
+     * <p>
      * check 字段为 PDU 的最后 4 个字符
      *
      * @param pdu 需要解析的 PDU 字符串
      * @return check 字段对应的字符串（4 个字符）
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 check 字段时抛出异常
      */
-    public static int getCheck(String pdu) {
+    private static int getCheck(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() < 4 || length < 4) {
             throw new IllegalArgumentException("PDU 数据长度不足，无法获取 check 字段！");
@@ -185,16 +185,17 @@ public class PDUUtil {
 
 
     /**
-     * 校验 PDU 数据中 length-4 是否和 check 字段相等。
+     * 校验 PDU
      *
      * @param pdu PDU 数据字符串
      * @return 校验成功返回 true，否则返回 false
      */
     public static boolean validateCheck(String pdu) {
-        if (pdu == null || pdu.length() < 15) {
+        if (pdu == null || pdu.length() < 15 || !pdu.startsWith("*#F#")) {
             log.error("无效的 PDU 数据！");
             return false;
         }
+
 
         // 1. 提取 length 字段（4 个字符，位于索引 4~8），并转换为整数
         int length = getLength(pdu);
@@ -223,6 +224,12 @@ public class PDUUtil {
     }
 
 
+    /**
+     * 根据PDU获取设备编号(只用于发往设备发往终端的信息)
+     *
+     * @param pdu PDU字符串
+     * @return 获取到的设备编号，若PDU长度小于18或处理失败，可能返回空字符串
+     */
     public static String getDeviceNo(String pdu) {
         if (pdu.length() < 18) {
             log.error("方法{}, 获取设备编号失败，解析失败的pdu为{}", "getDeviceNo", pdu);
@@ -235,13 +242,14 @@ public class PDUUtil {
 
     public static void main(String[] args) {
         // 示例 PDU 数据
-        String pdu = "*#F#00551100011864603061185738   VER8.43 2024/05/280033";
+        String pdu = "*1#F#00551100011864603061185738   VER8.43 2024/05/280033";
 //        parsePDU(pdu);
 //        log.info(String.valueOf(getCheck(pdu)));
 //        log.info(getBody(pdu));
 //        log.info(String.valueOf(getFuncNo(pdu)));
 //        log.info(String.valueOf(getLength(pdu)));
-//        boolean isValidate = validateCheck(pdu);
-        log.info(getDeviceNo(pdu));
+        boolean isValidate = validateCheck(pdu);
+        log.info(String.valueOf(isValidate));
+//        log.info(getDeviceNo(pdu));
     }
 }

@@ -3,8 +3,7 @@ package disruptor;
 import com.lmax.disruptor.RingBuffer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import model.DeviceData;
 
 /**
  * @program: gateway-netty
@@ -23,15 +22,16 @@ public class DeviceDataEventProducer {
      * <p>
      * 当接收到设备数据时调用此方法，将数据包装为事件并发布到环形缓冲区。
      *
-     * @param data 要设置的数据字符串
+     * @param data 要设置的数据
      * @param type 事件类型
      */
-    public void onData(String data, DeviceDataEvent.Type type) {
+    public void onData(DeviceData data, DeviceDataEvent.Type type) {
         // 获取下一个可用的序列号
         long sequence = ringBuffer.next();
         try {
             // 获取该序列号对应的事件对象
             DeviceDataEvent event = ringBuffer.get(sequence);
+
             event.setValue(data);
             event.setType(type);
         } finally {

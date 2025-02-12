@@ -2,6 +2,7 @@ package disruptor;
 
 import lombok.Getter;
 import lombok.Setter;
+import model.DeviceData;
 
 /**
  * @program: gateway-netty
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DeviceDataEvent {
-    private String value;
+    private DeviceData value;
     private Type type;
 
     public enum Type {

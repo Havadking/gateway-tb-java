@@ -68,8 +68,6 @@ public class DeviceRegistry {
         deviceMap.remove(deviceId);
         // 向Thingsboard声明设备断连
         mqttSender.sendDeviceDisconnected(deviceId);
-
-        System.out.println("暂停一下用于调试");
     }
 
 }
