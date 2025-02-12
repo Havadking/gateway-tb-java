@@ -1,5 +1,6 @@
 package mqtt;
 
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import config.GatewayConfig;
@@ -92,29 +93,23 @@ public class MqttReceiver implements MqttCallback {
      */
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-//        log.info("接受到的返回topic为:{}", topic);
         String messageContent = new String(message.getPayload());
-//        log.info("接受到的数据为: {}", messageContent);
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(messageContent);
 
         // 获取各个字段值
         String device = rootNode.get("device").asText();
-//        int id = rootNode.get("data").get("id").asInt();
-//        String method = rootNode.get("data").get("method").asText();
+        int id = rootNode.get("data").get("id").asInt();
         // 构造成设备接收所需要的类型
         String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
-
         DeviceData data = new DeviceData(device, body);
-        // 使用提取的值
-//        log.info("设备号: {}", device);
-////        log.info("ID: {}", id);
-////        log.info("方法: {}", method);
-//        log.info("消息体: {}", appendHexLength(body));
 
         // 放入 Disruptor
         producer.onData(data, DeviceDataEvent.Type.TO_DEVICE);
+
+        // 发送确认收到的信息
+        sendConfirmationResponse(topic, device, id);
     }
 
     /**
@@ -147,6 +142,31 @@ public class MqttReceiver implements MqttCallback {
 
         // 将十六进制长度添加到原字符串末尾
         return input + hexLength;
+    }
+
+    /**
+     * 发送确认响应到指定Topic。
+     *
+     * @param originalTopic 原始Topic
+     * @param deviceId      设备ID
+     * @param requestId     请求ID
+     * @throws Exception 发送过程中遇到异常时抛出
+     */
+    private void sendConfirmationResponse(String originalTopic, String deviceId, int requestId) throws Exception {
+        // 构建响应 JSON
+        JSONObject responseJson = new JSONObject();
+        responseJson.put("device", deviceId);
+        responseJson.put("id", requestId);
+        JSONObject dataJson = new JSONObject();
+        dataJson.put("success", true);
+        responseJson.put("data", dataJson);
+
+        // 创建 MQTT 消息
+        MqttMessage responseMessage = new MqttMessage(responseJson.toString().getBytes());
+        responseMessage.setQos(1); // 设置 QoS 等级
+
+        // 发布响应消息到相同的 Topic
+        mqttClient.publish(originalTopic, responseMessage);
     }
 
 }

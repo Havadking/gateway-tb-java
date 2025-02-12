@@ -41,12 +41,10 @@ public class AuthenticationHandler extends ChannelInboundHandlerAdapter {
                 ctx.fireChannelRead(msg);
                 // 移除自身,避免多次认证
                 ctx.pipeline().remove(this);
-
-                System.out.println("暂停一下用于调试");
             } else {
                 LogUtil.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证失败");
                 ctx.close();
-                // todo 发送认证失败响应
+                // todo 是否需要做重试机制
             }
         }
     }

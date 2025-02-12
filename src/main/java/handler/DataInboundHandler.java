@@ -7,6 +7,7 @@ import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import util.LogUtil;
 import util.PDUUtil;
@@ -18,6 +19,7 @@ import util.PDUUtil;
  * @create: 2025-02-08 17:33
  **/
 
+@Slf4j
 @AllArgsConstructor
 public class DataInboundHandler extends ChannelInboundHandlerAdapter {
 

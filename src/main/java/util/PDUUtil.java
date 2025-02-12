@@ -174,13 +174,13 @@ public class PDUUtil {
      * @return check 字段对应的字符串（4 个字符）
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 check 字段时抛出异常
      */
-    private static int getCheck(String pdu) {
+    private static String getCheck(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() < 4 || length < 4) {
             throw new IllegalArgumentException("PDU 数据长度不足，无法获取 check 字段！");
         }
         // 根据你的代码逻辑，check 字段从索引 (length - 4) 到 (length)
-        return Integer.parseInt(pdu.substring(length - 4, length));
+        return pdu.substring(length - 4, length);
     }
 
 
@@ -201,12 +201,12 @@ public class PDUUtil {
         int length = getLength(pdu);
 
         // 2. 提取 check 字段（最后 4 个字符）
-        int checkHex = getCheck(pdu);
+        String checkHex = getCheck(pdu);
 
         // 3. 将 check 字段从 16 进制转换为 10 进制
         int checkVal;
         try {
-            checkVal = Integer.parseInt(String.valueOf(checkHex), 16);
+            checkVal = Integer.parseInt(checkHex, 16);
         } catch (NumberFormatException e) {
             log.error("check 字段解析失败，非有效16进制：{}", checkHex);
             return false;
@@ -215,7 +215,7 @@ public class PDUUtil {
         // 4. 比较 length - 4 与转换后的 check 值是否相等
         int computedValue = length - 4;
         if (computedValue == checkVal) {
-            log.info("校验成功: length-4 = {} 与 check (10进制) = {} 相等", computedValue, checkVal);
+//            log.info("校验成功: length-4 = {} 与 check (10进制) = {} 相等", computedValue, checkVal);
             return true;
         } else {
             log.error("校验失败: length-4 = {} 不等于 check (10进制) = {}", computedValue, checkVal);
@@ -242,7 +242,8 @@ public class PDUUtil {
 
     public static void main(String[] args) {
         // 示例 PDU 数据
-        String pdu = "*1#F#00551100011864603061185738   VER8.43 2024/05/280033";
+        String pdu = "*#F#00551100011864603061185738   VER8.43 2024/05/280033";
+        String callPUD = "*#F#00661070002864603061185738   17651979715    20250212113310003E";
 //        parsePDU(pdu);
 //        log.info(String.valueOf(getCheck(pdu)));
 //        log.info(getBody(pdu));
