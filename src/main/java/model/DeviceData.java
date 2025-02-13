@@ -1,5 +1,7 @@
 package model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,6 +15,8 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class DeviceData {
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * 设备ID
      */
@@ -20,5 +24,15 @@ public class DeviceData {
     /**
      * 消息内容
      */
-    private final String msg;
+    private final Object msg;
+
+    // 序列化方法
+    public byte[] serializeMsg() throws Exception {
+        if (msg instanceof String) {
+            return ((String) msg).getBytes(CharsetUtil.UTF_8);
+        } else {
+            // 将对象转换为JSON字符串，再转换为字节数组
+            return objectMapper.writeValueAsString(msg).getBytes(CharsetUtil.UTF_8);
+        }
+    }
 }

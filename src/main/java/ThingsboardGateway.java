@@ -7,9 +7,6 @@ import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventHandler;
 import disruptor.DeviceDataEventProducer;
 import handler.ProtocolDetectionHandler;
-import handler.normal.AuthenticationHandlerNormal;
-import handler.normal.DataInboundHandlerNormal;
-import handler.IdleDisconnectHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -17,7 +14,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttConnection;
 import mqtt.MqttReceiver;
@@ -82,16 +78,6 @@ public class ThingsboardGateway {
                         @Override
                         public void initChannel(SocketChannel ch) {
                             ch.pipeline().addLast(
-                                    // 1. 将字节流转换成String类型
-//                                    new StringDecoder(),
-//                                    // 2. 初次连接时进行设备认证
-//                                    new AuthenticationHandlerNormal(deviceRegistry),
-//                                    // 3. 120 秒读空闲, 禁用写空闲和所有空闲
-//                                    new IdleStateHandler(GatewayConfig.READ_TIME_OUT, 0, 0),
-//                                    // 4. 处理空闲连接断开
-//                                    new IdleDisconnectHandler(),
-//                                    // 5. 将数据写到队列中
-//                                    new DataInboundHandlerNormal(producer)
                                     new ProtocolDetectionHandler(handlerFactory)
                             );
                         }

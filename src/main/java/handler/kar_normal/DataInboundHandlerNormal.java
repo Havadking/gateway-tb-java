@@ -1,4 +1,4 @@
-package handler.normal;
+package handler.kar_normal;
 
 import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;

@@ -1,4 +1,4 @@
-package handler.normal;
+package handler.kar_normal;
 
 import handler.AuthenticationHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,7 +26,7 @@ public class AuthenticationHandlerNormal extends ChannelInboundHandlerAdapter im
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        LogUtil.info(this.getClass().getName(), "channelRead读取第一条数据", msg, "第一次读取");
+        LogUtil.info(this.getClass().getName(), "卡尔普通话机channelRead读取第一条数据", msg, "第一次读取");
         authenticate(ctx, msg);
     }
 
@@ -34,13 +34,13 @@ public class AuthenticationHandlerNormal extends ChannelInboundHandlerAdapter im
     public void authenticate(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 验证数据合法性
         if (!PDUUtil.validateCheck((String) msg)) {
-            LogUtil.info(this.getClass().getName(), "channelRead验证第一条数据", msg, "验证失败");
+            LogUtil.info(this.getClass().getName(), "卡尔普通话机channelRead验证第一条数据", msg, "验证失败");
             ctx.close();
         } else {
-            LogUtil.info(this.getClass().getName(), "channelRead验证第一条数据", msg, "验证成功");
+            LogUtil.info(this.getClass().getName(), "卡尔普通话机channelRead验证第一条数据", msg, "验证成功");
             String deviceNo = PDUUtil.getDeviceNo((String) msg);
             if (AuthDeviceUtil.getDeviceAuth(deviceNo)) {
-                LogUtil.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证成功");
+                LogUtil.info(this.getClass().getName(), "卡尔普通话机channelRead开始进行认证", deviceNo, "认证成功");
                 deviceRegistry.register(deviceNo, ctx.channel());
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(deviceNo);
                 //将消息传递到下一个Inbound
@@ -48,7 +48,7 @@ public class AuthenticationHandlerNormal extends ChannelInboundHandlerAdapter im
                 // 移除自身,避免多次认证
                 ctx.pipeline().remove(this);
             } else {
-                LogUtil.info(this.getClass().getName(), "channelRead开始进行认证", deviceNo, "认证失败");
+                LogUtil.info(this.getClass().getName(), "卡尔普通话机channelRead开始进行认证", deviceNo, "认证失败");
                 ctx.close();
                 // todo 是否需要做重试机制
             }

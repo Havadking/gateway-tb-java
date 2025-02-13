@@ -61,7 +61,7 @@ public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
         IdleDisconnectHandler idleDisconnectHandler = new IdleDisconnectHandler();
 
         // 4. 将 Handler 添加到 Pipeline
-        ctx.pipeline().addLast(new StringDecoder());
+        ctx.pipeline().addLast(handlerFactory.getDecoder(protocolId));
         ctx.pipeline().addLast((ChannelHandlerAdapter)authHandler);
         ctx.pipeline().addLast(idleStateHandler);
         ctx.pipeline().addLast(idleDisconnectHandler);
