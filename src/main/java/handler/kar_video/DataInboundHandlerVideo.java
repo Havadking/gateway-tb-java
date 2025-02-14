@@ -152,7 +152,14 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
     }
 
     /**
-     * 构建完整的数据包
+     * 构建一个完整的数据包。
+     *
+     * @param protocolType 协议类型
+     * @param sessionIndex 会话序号
+     * @param totalPackets 协议总包数
+     * @param packetIndex  协议包序号
+     * @param data         数据内容
+     * @return 构建好的数据包 ByteBuf 对象
      */
     private ByteBuf buildPacket(byte[] protocolType, int sessionIndex, int totalPackets, int packetIndex, byte[] data) {
 
@@ -190,7 +197,10 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
     }
 
     /**
-     * int 转 byte 数组 (大端序)
+     * 将int值转换为字节序列（大端序）
+     *
+     * @param value 需要转换的int值
+     * @return 转换后的字节序列数组
      */
     private byte[] intToBytesBigEndian(int value) {
         return new byte[]{
@@ -202,7 +212,10 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
     }
 
     /**
-     * short 转 byte 数组 (大端序)
+     * 将短整型数据转换为字节数组（大端序）
+     *
+     * @param value 需要转换的短整型值
+     * @return 转换后的字节数组
      */
     private byte[] shortToBytesBigEndian(short value) {
         return new byte[]{
@@ -212,7 +225,11 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
     }
 
 
-
+    /**
+     * 获取当前时间的方法
+     *
+     * @return 返回当前时间的字符串表示，格式为"yyyy-MM-dd HH:mm:ss"
+     */
     private String getCurrentTime() {
         return LocalDateTime.now().format(
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
