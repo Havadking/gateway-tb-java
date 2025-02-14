@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttConnection;
 import mqtt.MqttReceiver;
 import mqtt.MqttSender;
+import mqtt.parser.MqttMessageParserFactory;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import protocol.ProtocolHandlerFactory;
 import registry.DeviceRegistry;
@@ -46,12 +47,13 @@ public class ThingsboardGateway {
         MqttClient mqttClient = mqttConnection.getMqttClient();
 
         // 3. 创建组件
+        MqttMessageParserFactory parserFactory = MqttMessageParserFactory.createDefault();
         MqttSender mqttSender = new MqttSender(mqttClient);
         DeviceRegistry deviceRegistry = new DeviceRegistry(mqttSender);
         DeviceDataEventProducer producer = new DeviceDataEventProducer(
                 disruptor.getRingBuffer()
         );
-        MqttReceiver mqttReceiver = new MqttReceiver(producer, mqttClient);
+        MqttReceiver mqttReceiver = new MqttReceiver(producer, mqttClient, parserFactory);
 
         // 4. 连接 Disruptor 的 Handler
         disruptor.handleEventsWith(

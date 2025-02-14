@@ -8,11 +8,14 @@ import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import mqtt.parser.MqttMessageParser;
+import mqtt.parser.MqttMessageParserFactory;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import protocol.ProtocolIdentifier;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,14 +52,19 @@ public class MqttReceiver implements MqttCallback {
     private final AtomicInteger reconnectAttempts = new AtomicInteger(0);
 
     /**
+     * MQTT消息解析工厂实例。
+     */
+    private final MqttMessageParserFactory parserFactory;
+    /**
      * 是否正在重连
      */
     private volatile boolean isReconnecting = false;
 
-    public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient) {
+    public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient, MqttMessageParserFactory parserFactory) {
         this.producer = producer;
         this.mqttClient = mqttClient;
         this.mqttClient.setCallback(this); // 设置回调
+        this.parserFactory = parserFactory;
     }
 
     public void start() throws MqttException {
@@ -137,22 +145,33 @@ public class MqttReceiver implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         log.info("收到来自thingsboard的消息 {}", message);
         String messageContent = new String(message.getPayload());
-
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(messageContent);
-
-        // 获取各个字段值
         String device = rootNode.get("device").asText();
+        String method = rootNode.get("data").get("method").asText();
         int id = rootNode.get("data").get("id").asInt();
-        // 构造成设备接收所需要的类型
-        String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
-        DeviceData data = new DeviceData(device, body, "NORMAL");
+        // 1. 根据 Topic 或消息内容确定协议类型
+        String protocolType = determineProtocolType(method);
+
+        // 2. 获取 MqttMessageParser
+        MqttMessageParser parser = parserFactory.getParser(protocolType);
 
         // 放入 Disruptor
+        DeviceData data = parser.parseMessage(message);
         producer.onData(data, DeviceDataEvent.Type.TO_DEVICE);
 
         // 发送确认收到的信息
         sendConfirmationResponse(topic, device, id);
+    }
+
+    private String determineProtocolType(String method) {
+        if (method.equals("send_msg")) {
+            // 普通话机
+            log.info("普通话机下发数据");
+            return "NORMAL";
+        }
+        log.info("视频话机下发数据");
+        return "VIDEO";
     }
 
     /**
@@ -168,23 +187,6 @@ public class MqttReceiver implements MqttCallback {
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
 
-    }
-
-    /**
-     * 将输入字符串的长度转换为4位十六进制表示，并将其追加到字符串末尾。
-     *
-     * @param input 原始字符串
-     * @return 追加了长度十六进制表示的字符串
-     */
-    public static String appendHexLength(String input) {
-        // 获取字符串长度
-        int length = input.length();
-
-        // 转换为4位十六进制，不足位数补0
-        String hexLength = String.format("%04X", length);
-
-        // 将十六进制长度添加到原字符串末尾
-        return input + hexLength;
     }
 
     /**
