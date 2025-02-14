@@ -6,6 +6,9 @@ import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttSender;
+import mqtt.builder.MqttMessageBuilder;
+import mqtt.builder.MqttMessageBuilderFactory;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import registry.DeviceRegistry;
 
 /**
@@ -29,6 +32,11 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
      */
     private final DeviceRegistry deviceRegistry;
 
+    /**
+     * MQTT消息构造器工厂
+     */
+    private final MqttMessageBuilderFactory builderFactory;
+
 
     /**
      * 处理设备数据事件。
@@ -45,18 +53,12 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
             log.info("【发往thingsboard】消费了{}，数据为{}", sequence, event.getValue().getMsg());
-            // 由设备发往Thingsboard
-            switch (event.getValue().getProtocolType()){
-                case PROTOCOL_NORMAL:
-                    mqttSender.sendDeviceTelemetryProtocolNormal((String) event.getValue().getMsg());
-                    break;
-                case PROTOCOL_VIDEO:
-                    mqttSender.sendDeviceTelemetryProtocolVideo(event.getValue());
-                    break;
-                default:
-                    // 需要如何处理？
-                    break;
-            }
+            // 1. 获取对应的信息构建器
+            MqttMessageBuilder builder = builderFactory.getBuilder(event.getValue().getProtocolType());
+            // 2. 构建 MQTT 消息
+            MqttMessage message = builder.buildMessage(event.getValue());
+            // 3. 发送 MQTT 信息
+            mqttSender.sendToThingsboard(message);
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
             log.info("【发往设备】消费了{}, 数据为{}", sequence, event.getValue());
             // 由Thingsboard发送到设备

@@ -34,7 +34,7 @@ public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 1. 检测协议类型
         ProtocolIdentifier protocolId = detectProtocol(ctx, msg);
-        log.info("信息{}对应的设备类型为{}", msg, protocolId);
+        log.info("信息{}对应的设备类型为:{}", msg, protocolId);
 
         // 2. 从工厂中获取对应 Handler
         // 获取所有 handlers

@@ -127,154 +127,199 @@ public class MqttSender {
      * @param PDU 要发送的数据协议数据单元（Protocol Data Unit）
      * @throws RuntimeException 当生成JSON消息或发布MQTT消息失败时抛出运行时异常
      */
-    public void sendDeviceTelemetryProtocolNormal(String PDU) throws MqttException {
-        int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
-        int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
-        int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
-        int currentRetry = 0;
-
-        // 创建 JSON 对象
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode msg = objectMapper.createObjectNode();
-        ArrayNode nameArray = objectMapper.createArrayNode();
-        ObjectNode nameObject = objectMapper.createObjectNode();
-
-        while (currentRetry <= maxRetries) {
-            try {
-                // 获取相关参数
-                String deviceNo = PDUUtil.getDeviceNo(PDU);
-                String data = PDU.substring(4);
-
-                nameObject.put("INFO", data);
-                nameArray.add(nameObject);
-                msg.set(deviceNo, nameArray);
-
-                String payload = objectMapper.writeValueAsString(msg);
-                log.info("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, payload);
-
-                // 创建 MQTT 消息对象
-                MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
-                message.setQos(1);
-
-                // 发布消息
-                mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                log.info("发送遥测数据[{}]成功（第{}次尝试）", PDU, currentRetry+1);
-
-                // 发送成功，退出循环
-                break;
-
-            } catch (Exception e) {
-                if (!mqttClient.isConnected()) {
-                    mqttClient.reconnect();
-                }
-
-                currentRetry++;
-
-                if (currentRetry > maxRetries) {
-                    log.error("发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
-                    throw new RuntimeException("发送遥测数据失败，已达到最大重试次数", e);
-                }
-
-                // 计算指数退避时间
-                int retryIntervalMs = Math.min(
-                        baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
-                        maxIntervalMs
-                );
-
-                log.warn("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
-                        retryIntervalMs, currentRetry, e.getMessage());
-
-                try {
-                    Thread.sleep(retryIntervalMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("重试等待被中断", ie);
-                }
-            }
-        }
-    }
+//    public void sendDeviceTelemetryProtocolNormal(String PDU) throws MqttException {
+//        int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
+//        int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
+//        int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
+//        int currentRetry = 0;
+//
+//        // 创建 JSON 对象
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        ObjectNode msg = objectMapper.createObjectNode();
+//        ArrayNode nameArray = objectMapper.createArrayNode();
+//        ObjectNode nameObject = objectMapper.createObjectNode();
+//
+//        while (currentRetry <= maxRetries) {
+//            try {
+//                // 获取相关参数
+//                String deviceNo = PDUUtil.getDeviceNo(PDU);
+//                String data = PDU.substring(4);
+//
+//                nameObject.put("INFO", data);
+//                nameArray.add(nameObject);
+//                msg.set(deviceNo, nameArray);
+//
+//                String payload = objectMapper.writeValueAsString(msg);
+//                log.info("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, payload);
+//
+//                // 创建 MQTT 消息对象
+//                MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
+//                message.setQos(1);
+//
+//                // 发布消息
+//                mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
+//                log.info("发送遥测数据[{}]成功（第{}次尝试）", PDU, currentRetry+1);
+//
+//                // 发送成功，退出循环
+//                break;
+//
+//            } catch (Exception e) {
+//                if (!mqttClient.isConnected()) {
+//                    mqttClient.reconnect();
+//                }
+//
+//                currentRetry++;
+//
+//                if (currentRetry > maxRetries) {
+//                    log.error("发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
+//                    throw new RuntimeException("发送遥测数据失败，已达到最大重试次数", e);
+//                }
+//
+//                // 计算指数退避时间
+//                int retryIntervalMs = Math.min(
+//                        baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
+//                        maxIntervalMs
+//                );
+//
+//                log.warn("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
+//                        retryIntervalMs, currentRetry, e.getMessage());
+//
+//                try {
+//                    Thread.sleep(retryIntervalMs);
+//                } catch (InterruptedException ie) {
+//                    Thread.currentThread().interrupt();
+//                    throw new RuntimeException("重试等待被中断", ie);
+//                }
+//            }
+//        }
+//    }
 
 
     /**
      * 发送设备遥测协议视频数据
      * 只适用于卡尔视频话机
-     * @param data 设备数据对象
+     * @param deviceData 设备数据对象
      * @throws MqttException 当MQTT通信出现异常时抛出
      */
-    public void sendDeviceTelemetryProtocolVideo(DeviceData data) throws MqttException {
+//    public void sendDeviceTelemetryProtocolVideo(DeviceData deviceData) throws MqttException {
+//        int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
+//        int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
+//        int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
+//        int currentRetry = 0;
+//
+//        String deviceNo = deviceData.getDeviceId();
+//        @SuppressWarnings("unchecked")
+//        Map<String, Object> messageMap = (Map<String, Object>) deviceData.getMsg();
+//        // 获取 command
+//        String command = (String) messageMap.get("command");
+//        // 获取 request 内容
+//        @SuppressWarnings("unchecked")
+//        Map<String, Object> request = (Map<String, Object>) messageMap.get("request");
+//        log.info("request is {}", request);
+//
+//        // 创建 JSON 对象
+//        // 创建嵌套的数据结构
+//        Map<String, Object> values = new HashMap<>();
+//        values.put(command, request);  // 使用 command 作为 key，request 作为 value
+//
+//        Map<String, Object> dataPoint = new HashMap<>();
+//        dataPoint.put("ts", System.currentTimeMillis());  // 使用给定的时间戳
+//        dataPoint.put("values", values);
+//
+//        // 创建最终的 JSON 结构
+//        Map<String, List<Map<String, Object>>> result = new HashMap<>();
+//        result.put(deviceNo, Collections.singletonList(dataPoint));
+//
+//        while (currentRetry <= maxRetries) {
+//            try {
+//                // 转换为 JSON 字符串
+//                ObjectMapper mapper = new ObjectMapper();
+//                String payload = mapper.writeValueAsString(result);
+//
+//                log.info("视频话机正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, payload);
+//
+//                // 创建 MQTT 消息对象
+//                MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
+//                message.setQos(1);
+//
+//                // 发布消息
+//                mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
+//                log.info("视频话机发送遥测数据[{}]成功（第{}次尝试）", payload, currentRetry+1);
+//
+//                // 发送成功，退出循环
+//                break;
+//
+//            } catch (Exception e) {
+//                if (!mqttClient.isConnected()) {
+//                    mqttClient.reconnect();
+//                }
+//
+//                currentRetry++;
+//
+//                if (currentRetry > maxRetries) {
+//                    log.error("视频话机发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
+//                    throw new RuntimeException("视频话机发送遥测数据失败，已达到最大重试次数", e);
+//                }
+//
+//                // 计算指数退避时间
+//                int retryIntervalMs = Math.min(
+//                        baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
+//                        maxIntervalMs
+//                );
+//
+//                log.warn("视频话机发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
+//                        retryIntervalMs, currentRetry, e.getMessage());
+//
+//                try {
+//                    Thread.sleep(retryIntervalMs);
+//                } catch (InterruptedException ie) {
+//                    Thread.currentThread().interrupt();
+//                    throw new RuntimeException("视频话机重试等待被中断", ie);
+//                }
+//            }
+//        }
+//    }
+
+    /**
+     * 发送遥测数据到Thingsboard
+     *
+     * @param message MQTT消息对象，包含设备遥测数据
+     * @throws MqttException 当通过MQTT发送消息遇到问题时抛出
+     */
+    public void sendToThingsboard(MqttMessage message) throws MqttException {
         int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
         int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
         int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
         int currentRetry = 0;
-
-        String deviceNo = data.getDeviceId();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> messageMap = (Map<String, Object>) data.getMsg();
-        // 获取 command
-        String command = (String) messageMap.get("command");
-        // 获取 request 内容
-        @SuppressWarnings("unchecked")
-        Map<String, Object> request = (Map<String, Object>) messageMap.get("request");
-        log.info("request is {}", request);
-
-        // 创建 JSON 对象
-        // 创建嵌套的数据结构
-        Map<String, Object> values = new HashMap<>();
-        values.put(command, request);  // 使用 command 作为 key，request 作为 value
-
-        Map<String, Object> dataPoint = new HashMap<>();
-        dataPoint.put("ts", System.currentTimeMillis());  // 使用给定的时间戳
-        dataPoint.put("values", values);
-
-        // 创建最终的 JSON 结构
-        Map<String, List<Map<String, Object>>> result = new HashMap<>();
-        result.put(deviceNo, Collections.singletonList(dataPoint));
-
         while (currentRetry <= maxRetries) {
             try {
-                // 转换为 JSON 字符串
-                ObjectMapper mapper = new ObjectMapper();
-                String payload = mapper.writeValueAsString(result);
-
-                log.info("视频话机正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, payload);
-
-                // 创建 MQTT 消息对象
-                MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
-                message.setQos(1);
-
+                log.info("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                log.info("视频话机发送遥测数据[{}]成功（第{}次尝试）", payload, currentRetry+1);
-
+                log.info("视频话机发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
                 // 发送成功，退出循环
                 break;
-
             } catch (Exception e) {
                 if (!mqttClient.isConnected()) {
                     mqttClient.reconnect();
                 }
-
                 currentRetry++;
-
                 if (currentRetry > maxRetries) {
-                    log.error("视频话机发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
-                    throw new RuntimeException("视频话机发送遥测数据失败，已达到最大重试次数", e);
+                    log.error("发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
+                    throw new RuntimeException("发送遥测数据失败，已达到最大重试次数", e);
                 }
-
                 // 计算指数退避时间
                 int retryIntervalMs = Math.min(
                         baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
                         maxIntervalMs
                 );
-
-                log.warn("视频话机发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
+                log.warn("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
                         retryIntervalMs, currentRetry, e.getMessage());
-
                 try {
                     Thread.sleep(retryIntervalMs);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException("视频话机重试等待被中断", ie);
+                    throw new RuntimeException("重试等待被中断", ie);
                 }
             }
         }
