@@ -54,7 +54,8 @@ public class AuthenticationHandlerVideo extends ChannelInboundHandlerAdapter imp
             log.info("卡尔视频话机协议格式验证成功<发送link验证>：{}", msg);
             if (AuthDeviceUtil.getDeviceAuth(identity)) {
                 log.info("卡尔视频话机认证成功：{}", identity);
-                deviceRegistry.register(identity, ctx.channel());
+                // todo 暂时注释掉用于测试
+//                deviceRegistry.register(identity, ctx.channel());
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(identity);
                 //将消息传递到下一个Inbound
                 ctx.fireChannelRead(msg);

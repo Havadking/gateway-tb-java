@@ -2,8 +2,11 @@ package mqtt.parser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import protocol.ProtocolIdentifier;
 
 /**
@@ -13,7 +16,9 @@ import protocol.ProtocolIdentifier;
  * @create: 2025-02-14 11:17
  **/
 
+@Slf4j
 public class MqttMessageParserNormal implements MqttMessageParser{
+
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
         String messageContent = new String(message.getPayload());
@@ -25,6 +30,7 @@ public class MqttMessageParserNormal implements MqttMessageParser{
         String device = rootNode.get("device").asText();
         // 构造成设备接收所需要的类型
         String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
+        log.info("普通话机解析的值为:{}", body);
         return new DeviceData(device, body, ProtocolIdentifier.PROTOCOL_NORMAL);
     }
 

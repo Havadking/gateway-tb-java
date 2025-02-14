@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import util.VideoParserUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -30,7 +31,7 @@ public class MqttMessageBuilderVideo implements MqttMessageBuilder{
         String command = (String) messageMap.get("command");
         // 获取 request 内容
         @SuppressWarnings("unchecked")
-        Map<String, Object> request = (Map<String, Object>) messageMap.get("request");
+        Map<String, Object> request = (Map<String, Object>) messageMap.get(VideoParserUtil.getToTBMessageType(command));
 
         // 创建 JSON 对象
         // 创建嵌套的数据结构

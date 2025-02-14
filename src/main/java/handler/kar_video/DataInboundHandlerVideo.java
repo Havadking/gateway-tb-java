@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;
 import handler.DataInboundHandler;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -12,10 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import protocol.ProtocolIdentifier;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @program: gateway-netty
@@ -36,6 +39,18 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
      */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    //同步标识
+    private static final byte asyncIdentityPrefix = 0x40;
+    private static final byte asyncIdentitySuffix = 0x47;  // 根据设备类型，如 'G' 对应 0x47
+    //协议加密类型
+    private static final byte[] encryptionType = {0x27, 0x10};
+    private static final byte[] keyIndex = {0x00, 0x00, 0x00, 0x00};
+    private static final int MAX_PACKET_SIZE = 2000;
+    // 会话序号 (从0开始，每个连接递增, 这里只是演示, 你需要根据每个连接维护一个)
+    private static final AtomicInteger sessionCounter = new AtomicInteger(0);
+    //协议类型, 需要根据你的实际情况确定
+    private static final byte[] protocolType = {0x00, 0x00};
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         handleData(ctx, msg);
@@ -51,6 +66,9 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
         // 获取 request 内容
         @SuppressWarnings("unchecked")
         Map<String, Object> request = (Map<String, Object>) messageMap.get("request");
+        if (request == null) {
+            request = (Map<String, Object>) messageMap.get("response");
+        }
         log.info("request is {}", request);
         // 获取具体字段
         String identity = (String) request.get("Identity");
@@ -88,21 +106,112 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
             // 转换为JSON字符串
             String jsonResponse = objectMapper.writeValueAsString(message);
 
-            // 发送响应
-            ctx.writeAndFlush(Unpooled.copiedBuffer(jsonResponse.getBytes()))
-                    .addListener(future -> {
-                        if (future.isSuccess()) {
-                            log.info("认证响应发送成功{}", jsonResponse);
-                        } else {
-                            log.error("认证响应发送失败", future.cause());
-                        }
-                    });
+            // 获取递增的 sessionIndex
+            int sessionIndex = sessionCounter.getAndIncrement();
 
+            // 2. 构建完整的数据包 (可能需要分包)
+            sendData(ctx,protocolType,sessionIndex,jsonResponse);
         } catch (Exception e) {
             log.error("构建认证响应失败", e);
             ctx.close();
         }
     }
+
+
+    /**
+     * 发送数据 (可能需要分包)
+     */
+    private void sendData(ChannelHandlerContext ctx, byte[] protocolType, int sessionIndex, String jsonData) {
+        byte[] jsonBytes = jsonData.getBytes(StandardCharsets.UTF_8);
+        int dataLength = jsonBytes.length;
+
+        // 计算总包数
+        int totalPackets = (dataLength + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
+
+        // 分包发送
+        for (int i = 0; i < totalPackets; i++) {
+            int start = i * MAX_PACKET_SIZE;
+            int end = Math.min((i + 1) * MAX_PACKET_SIZE, dataLength);
+            byte[] packetData = new byte[end - start];
+            System.arraycopy(jsonBytes, start, packetData, 0, end - start);
+
+            // 构建完整的数据包
+            ByteBuf buffer = buildPacket(protocolType, sessionIndex, totalPackets, i, packetData);
+
+            // 发送
+            int finalI = i;
+            ctx.writeAndFlush(buffer)
+                    .addListener(future -> {
+                        if (future.isSuccess()) {
+                            log.info("数据包发送成功 (包序号: {}/{})", finalI + 1, totalPackets);
+                        } else {
+                            log.error("数据包发送失败 (包序号: {}/{})", finalI + 1, totalPackets, future.cause());
+                        }
+                    });
+        }
+    }
+
+    /**
+     * 构建完整的数据包
+     */
+    private ByteBuf buildPacket(byte[] protocolType, int sessionIndex, int totalPackets, int packetIndex, byte[] data) {
+
+        ByteBuf buffer = Unpooled.buffer();
+
+        // 0. 同步标识
+        buffer.writeByte(asyncIdentityPrefix);
+        buffer.writeByte(asyncIdentitySuffix); // 0x47 (话机，'G')
+
+        // 2. 协议类型
+        buffer.writeBytes(protocolType); // {0x00, 0x00} (link)
+
+        // 4. 会话序号
+        buffer.writeBytes(intToBytesBigEndian(sessionIndex));
+
+        // 8. 协议总包数
+        buffer.writeBytes(shortToBytesBigEndian((short) totalPackets));
+
+        // 10. 协议包序号
+        buffer.writeBytes(shortToBytesBigEndian((short) packetIndex));
+
+        // 12. 秘钥序号
+        buffer.writeBytes(keyIndex);
+
+        // 16. 协议加密类型
+        buffer.writeBytes(encryptionType); // {0x27, 0x10}
+
+        // 18. 加密数据长度
+        buffer.writeBytes(shortToBytesBigEndian((short) data.length));
+
+        // 20. 数据内容 (JSON 的 UTF-8 字节)
+        buffer.writeBytes(data);
+
+        return buffer;
+    }
+
+    /**
+     * int 转 byte 数组 (大端序)
+     */
+    private byte[] intToBytesBigEndian(int value) {
+        return new byte[]{
+                (byte) ((value >>> 24) & 0xFF),
+                (byte) ((value >>> 16) & 0xFF),
+                (byte) ((value >>> 8) & 0xFF),
+                (byte) (value & 0xFF)
+        };
+    }
+
+    /**
+     * short 转 byte 数组 (大端序)
+     */
+    private byte[] shortToBytesBigEndian(short value) {
+        return new byte[]{
+                (byte) ((value >>> 8) & 0xFF),
+                (byte) (value & 0xFF)
+        };
+    }
+
+
 
     private String getCurrentTime() {
         return LocalDateTime.now().format(

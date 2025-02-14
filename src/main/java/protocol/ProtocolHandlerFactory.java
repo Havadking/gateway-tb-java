@@ -1,6 +1,7 @@
 package protocol;
 
 import disruptor.DeviceDataEventProducer;
+import exceptions.UnsupportedProtocolException;
 import handler.kar_normal.AuthenticationHandlerNormal;
 import handler.kar_normal.DataInboundHandlerNormal;
 import handler.kar_video.AuthenticationHandlerVideo;
@@ -66,7 +67,7 @@ public class ProtocolHandlerFactory {
     public List<ChannelHandler> getHandlers(ProtocolIdentifier protocolId) throws Exception {
         List<Supplier<ChannelHandler>> handlers = handlerFactories.get(protocolId);
         if (handlers == null) {
-            throw new Exception("获取handler失败:" + protocolId);
+            throw new UnsupportedProtocolException("获取handler失败:" + protocolId);
         }
         return handlers.stream()
                 .map(Supplier::get)
