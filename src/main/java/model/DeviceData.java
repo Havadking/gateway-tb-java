@@ -26,6 +26,8 @@ public class DeviceData {
      */
     private final Object msg;
 
+    private final String protocolType; // 新增：协议类型
+
     // 序列化方法
     public byte[] serializeMsg() throws Exception {
         if (msg instanceof String) {

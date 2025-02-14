@@ -50,10 +50,10 @@ public class DataInboundHandlerNormal extends ChannelInboundHandlerAdapter imple
         if (!PDUUtil.validateCheck((String) msg)){
             LogUtil.info(this.getClass().getName(), "channelRead", msg, "消息验证失败，丢弃该消息");
             return; // 直接返回，不再继续处理
-        } {
+        }else  {
             // 直接将Message放到Disruptor队列中
             LogUtil.info(this.getClass().getName(), "channelRead", msg, "数据写入Disruptor");
-            DeviceData data = new DeviceData(PDUUtil.getDeviceNo((String) msg), (String) msg);
+            DeviceData data = new DeviceData(PDUUtil.getDeviceNo((String) msg), (String) msg, "NORMAL");
             producer.onData(data, DeviceDataEvent.Type.TO_TB);
         }
     }

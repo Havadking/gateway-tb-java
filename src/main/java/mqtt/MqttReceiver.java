@@ -62,6 +62,7 @@ public class MqttReceiver implements MqttCallback {
     public void start() throws MqttException {
         // 订阅服务器的RPC命令
         mqttClient.subscribe(GatewayConfig.RPC_TOPIC);
+        log.info("MQTT 订阅 RPC 地址成功");
     }
 
 
@@ -134,6 +135,7 @@ public class MqttReceiver implements MqttCallback {
      */
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
+        log.info("收到来自thingsboard的消息 {}", message);
         String messageContent = new String(message.getPayload());
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -144,7 +146,7 @@ public class MqttReceiver implements MqttCallback {
         int id = rootNode.get("data").get("id").asInt();
         // 构造成设备接收所需要的类型
         String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
-        DeviceData data = new DeviceData(device, body);
+        DeviceData data = new DeviceData(device, body, "NORMAL");
 
         // 放入 Disruptor
         producer.onData(data, DeviceDataEvent.Type.TO_DEVICE);

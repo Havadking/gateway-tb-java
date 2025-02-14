@@ -3,13 +3,11 @@ package disruptor;
 import com.lmax.disruptor.EventHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttSender;
 import registry.DeviceRegistry;
 import util.LogUtil;
-import util.PDUUtil;
 
 /**
  * @program: gateway-netty
@@ -49,7 +47,17 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
             log.info("【发往thingsboard】消费了{}", sequence);
             // 由设备发往Thingsboard
-            mqttSender.sendDeviceTelemetry((String) event.getValue().getMsg());
+            switch (event.getValue().getProtocolType()){
+                case "NORMAL":
+                    mqttSender.sendDeviceTelemetryProtocolNormal((String) event.getValue().getMsg());
+                    break;
+                case "VIDEO":
+                    mqttSender.sendDeviceTelemetryProtocolVideo(event.getValue());
+                    break;
+                default:
+                    // 需要如何处理？
+                    break;
+            }
             LogUtil.info(this.getClass().getName(), "onEvent", event.getValue().getMsg(), "由设备发往Thingsboard");
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
             log.info("【发往设备】消费了{}", sequence);

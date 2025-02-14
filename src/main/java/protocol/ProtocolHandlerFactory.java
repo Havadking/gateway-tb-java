@@ -4,6 +4,7 @@ import disruptor.DeviceDataEventProducer;
 import handler.kar_normal.AuthenticationHandlerNormal;
 import handler.kar_normal.DataInboundHandlerNormal;
 import handler.kar_video.AuthenticationHandlerVideo;
+import handler.kar_video.DataInboundHandlerVideo;
 import handler.kar_video.JsonProtocolDecoder;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.string.StringDecoder;
@@ -105,7 +106,7 @@ public class ProtocolHandlerFactory {
 
         // 注册视频话机的协议的 handler
         factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new AuthenticationHandlerVideo(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundHandlerNormal(producer));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundHandlerVideo(producer));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
 
         return factory;

@@ -61,7 +61,7 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
         } else {
             log.info("处理非link链接");
             LogUtil.info(this.getClass().getName(), "channelRead", data, "数据写入Disruptor");
-            DeviceData msg = new DeviceData(identity, data);
+            DeviceData msg = new DeviceData(identity, data, "VIDEO");
             producer.onData(msg, DeviceDataEvent.Type.TO_TB);
         }
     }
@@ -76,16 +76,17 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
         try {
             // 构建响应数据
             Map<String, Object> response = new HashMap<>();
-            response.put("Result", "1");
             response.put("DeviceID", identity);
             response.put("DeviceManager", "xxt");
             response.put("Time", getCurrentTime());
+            response.put("Result", "1");
 
             // 构建完整消息
             Map<String, Object> message = new HashMap<>();
+            message.put("response", response);
             message.put("type", "terminal");
             message.put("command", "link");
-            message.put("response", response);
+
 
             // 转换为JSON字符串
             String jsonResponse = objectMapper.writeValueAsString(message);
