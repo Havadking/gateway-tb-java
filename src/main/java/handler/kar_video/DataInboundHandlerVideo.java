@@ -10,8 +10,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import util.LogUtil;
-import util.PDUUtil;
+import protocol.ProtocolIdentifier;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,12 +37,12 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         handleData(ctx, msg);
     }
 
     @Override
-    public void handleData(ChannelHandlerContext ctx, Object data) throws Exception {
+    public void handleData(ChannelHandlerContext ctx, Object data) {
         // 1. 提取所需要的值
         @SuppressWarnings("unchecked")
         Map<String, Object> messageMap = (Map<String, Object>) data;
@@ -56,12 +55,10 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
         // 获取具体字段
         String identity = (String) request.get("Identity");
         if (command.equals("link")) {
-            log.info("处理link连接");
             sendSuccessBack(ctx, identity);
         } else {
-            log.info("处理非link链接");
-            LogUtil.info(this.getClass().getName(), "channelRead", data, "数据写入Disruptor");
-            DeviceData msg = new DeviceData(identity, data, "VIDEO");
+            log.info("视频话机数据写入Disruptor:{}", data);
+            DeviceData msg = new DeviceData(identity, data, ProtocolIdentifier.PROTOCOL_VIDEO);
             producer.onData(msg, DeviceDataEvent.Type.TO_TB);
         }
     }
@@ -95,16 +92,14 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
             ctx.writeAndFlush(Unpooled.copiedBuffer(jsonResponse.getBytes()))
                     .addListener(future -> {
                         if (future.isSuccess()) {
-                            LogUtil.info(this.getClass().getName(), "sendSuccessBack",
-                                    "认证响应发送成功", jsonResponse);
+                            log.info("认证响应发送成功{}", jsonResponse);
                         } else {
-                            LogUtil.error(this.getClass().getName(), "sendSuccessBack",
-                                    "认证响应发送失败", future.cause());
+                            log.error("认证响应发送失败", future.cause());
                         }
                     });
 
         } catch (Exception e) {
-            LogUtil.error(this.getClass().getName(), "sendSuccessBack", "构建认证响应失败", e);
+            log.error("构建认证响应失败", e);
             ctx.close();
         }
     }

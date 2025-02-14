@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import protocol.ProtocolIdentifier;
 
 /**
  * @program: gateway-netty
@@ -24,7 +25,7 @@ public class MqttMessageParserNormal implements MqttMessageParser{
         String device = rootNode.get("device").asText();
         // 构造成设备接收所需要的类型
         String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
-        return new DeviceData(device, body, "NORMAL");
+        return new DeviceData(device, body, ProtocolIdentifier.PROTOCOL_NORMAL);
     }
 
     /**

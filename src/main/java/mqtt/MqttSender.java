@@ -11,7 +11,6 @@ import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import util.LogUtil;
 import util.PDUUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -68,7 +67,7 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.CONNECT_TOPIC, message);
-            LogUtil.info(this.getClass().getName(), "sendDeviceConnected", deviceNo, "设备连接");
+            log.info("设备连接{}", deviceNo);
         } catch (JsonProcessingException e) {
             log.error("生成设备连接 JSON 消息失败：{}", e.getMessage());
             throw new RuntimeException(e);
@@ -111,7 +110,7 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.DISCONNECT_TOPIC, message);
-            LogUtil.info(this.getClass().getName(), "sendDeviceDisconnected", deviceNo, "设备断开");
+            log.info("设备断开{}", deviceNo);
         } catch (JsonProcessingException e) {
             log.error("生成设备断开 JSON 消息失败：{}", e.getMessage());
             throw new RuntimeException(e);
@@ -159,8 +158,7 @@ public class MqttSender {
 
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                LogUtil.info(this.getClass().getName(), "sendDeviceTelemetry", PDU,
-                        String.format("发送遥测成功（第 %d 次尝试）", currentRetry + 1));
+                log.info("发送遥测数据[{}]成功（第{}次尝试）", PDU, currentRetry+1);
 
                 // 发送成功，退出循环
                 break;
@@ -246,8 +244,7 @@ public class MqttSender {
 
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                LogUtil.info(this.getClass().getName(), "sendDeviceTelemetry", payload,
-                        String.format("视频话机发送遥测成功（第 %d 次尝试）", currentRetry + 1));
+                log.info("视频话机发送遥测数据[{}]成功（第{}次尝试）", payload, currentRetry+1);
 
                 // 发送成功，退出循环
                 break;

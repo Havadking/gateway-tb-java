@@ -35,7 +35,7 @@ public class AuthDeviceUtil {
         // 构造请求 URL
         InputStream is = getStream(deviceNo);
         StringBuilder responseBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseBuilder.append(line);
@@ -118,7 +118,7 @@ public class AuthDeviceUtil {
         InputStream is = (responseCode >= 200 && responseCode < 300)
                 ? connection.getInputStream() : connection.getErrorStream();
         StringBuilder responseBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseBuilder.append(line);
@@ -135,12 +135,6 @@ public class AuthDeviceUtil {
         } catch (Exception e) {
             log.error("调用出现错误:{}",e.getMessage());
         }
-//        try {
-//            String token = getToken();
-//            System.out.println("Token: " + token);
-//        } catch (Exception e) {
-//            log.error("调用出现错误:{}",e.getMessage());
-//        }
     }
 
 

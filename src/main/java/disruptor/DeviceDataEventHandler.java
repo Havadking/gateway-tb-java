@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttSender;
 import registry.DeviceRegistry;
-import util.LogUtil;
 
 /**
  * @program: gateway-netty
@@ -45,22 +44,21 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
     @Override
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
-            log.info("【发往thingsboard】消费了{}", sequence);
+            log.info("【发往thingsboard】消费了{}，数据为{}", sequence, event.getValue().getMsg());
             // 由设备发往Thingsboard
             switch (event.getValue().getProtocolType()){
-                case "NORMAL":
+                case PROTOCOL_NORMAL:
                     mqttSender.sendDeviceTelemetryProtocolNormal((String) event.getValue().getMsg());
                     break;
-                case "VIDEO":
+                case PROTOCOL_VIDEO:
                     mqttSender.sendDeviceTelemetryProtocolVideo(event.getValue());
                     break;
                 default:
                     // 需要如何处理？
                     break;
             }
-            LogUtil.info(this.getClass().getName(), "onEvent", event.getValue().getMsg(), "由设备发往Thingsboard");
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
-            log.info("【发往设备】消费了{}", sequence);
+            log.info("【发往设备】消费了{}, 数据为{}", sequence, event.getValue());
             // 由Thingsboard发送到设备
             Channel channel = deviceRegistry.getChannel(event.getValue().getDeviceId());
             if (channel != null && channel.isActive()) {
@@ -72,7 +70,6 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
                         buf.writeBytes(event.getValue().serializeMsg());
                         // 写入并刷新 Channel
                         channel.writeAndFlush(buf);
-                        LogUtil.info(this.getClass().getName(), "onEvent", event.getValue(), "由Thingsboard发送到设备");
                     } catch (Exception e) {
                         // 确保在异常情况下释放 ByteBuf
                         buf.release();

@@ -151,7 +151,7 @@ public class MqttReceiver implements MqttCallback {
         String method = rootNode.get("data").get("method").asText();
         int id = rootNode.get("data").get("id").asInt();
         // 1. 根据 Topic 或消息内容确定协议类型
-        String protocolType = determineProtocolType(method);
+        ProtocolIdentifier protocolType = determineProtocolType(method);
 
         // 2. 获取 MqttMessageParser
         MqttMessageParser parser = parserFactory.getParser(protocolType);
@@ -164,14 +164,14 @@ public class MqttReceiver implements MqttCallback {
         sendConfirmationResponse(topic, device, id);
     }
 
-    private String determineProtocolType(String method) {
+    private ProtocolIdentifier determineProtocolType(String method) {
         if (method.equals("send_msg")) {
             // 普通话机
             log.info("普通话机下发数据");
-            return "NORMAL";
+            return ProtocolIdentifier.PROTOCOL_NORMAL;
         }
         log.info("视频话机下发数据");
-        return "VIDEO";
+        return ProtocolIdentifier.PROTOCOL_VIDEO;
     }
 
     /**

@@ -8,7 +8,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import util.LogUtil;
+import protocol.ProtocolIdentifier;
 import util.PDUUtil;
 
 /**
@@ -38,7 +38,6 @@ public class DataInboundHandlerNormal extends ChannelInboundHandlerAdapter imple
      *
      * @param ctx 通道处理上下文
      * @param msg 从通道中读取到的消息对象
-     * @throws Exception 当处理消息发生异常时抛出
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -48,12 +47,13 @@ public class DataInboundHandlerNormal extends ChannelInboundHandlerAdapter imple
     @Override
     public void handleData(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (!PDUUtil.validateCheck((String) msg)){
-            LogUtil.info(this.getClass().getName(), "channelRead", msg, "消息验证失败，丢弃该消息");
-            return; // 直接返回，不再继续处理
+            log.info("普通话机消息验证失败，丢弃该消息{}", msg);
+            throw new Exception("消息验证失败");
+            // 直接返回，不再继续处理
         }else  {
             // 直接将Message放到Disruptor队列中
-            LogUtil.info(this.getClass().getName(), "channelRead", msg, "数据写入Disruptor");
-            DeviceData data = new DeviceData(PDUUtil.getDeviceNo((String) msg), (String) msg, "NORMAL");
+            log.info("普通话机数据{}写入Disruptor", msg);
+            DeviceData data = new DeviceData(PDUUtil.getDeviceNo((String) msg), msg, ProtocolIdentifier.PROTOCOL_NORMAL);
             producer.onData(data, DeviceDataEvent.Type.TO_TB);
         }
     }
