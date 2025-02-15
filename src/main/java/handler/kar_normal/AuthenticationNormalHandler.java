@@ -17,11 +17,11 @@ import util.PDUUtil;
  **/
 
 @Slf4j
-public class AuthenticationHandlerNormal extends ChannelInboundHandlerAdapter implements AuthenticationHandler {
+public class AuthenticationNormalHandler extends ChannelInboundHandlerAdapter implements AuthenticationHandler {
 
     public final DeviceRegistry deviceRegistry;
 
-    public AuthenticationHandlerNormal(DeviceRegistry deviceRegistry) {
+    public AuthenticationNormalHandler(DeviceRegistry deviceRegistry) {
         this.deviceRegistry = deviceRegistry;
     }
 

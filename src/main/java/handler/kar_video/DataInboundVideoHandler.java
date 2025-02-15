@@ -4,22 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;
 import handler.DataInboundHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import protocol.ProtocolIdentifier;
 import util.VideoParserUtil;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @program: gateway-netty
@@ -29,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 @Slf4j
 @AllArgsConstructor
-public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implements DataInboundHandler {
+public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implements DataInboundHandler {
     /**
      * 设备数据事件生产者
      */
@@ -63,12 +60,12 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
         }
         log.info("request is {}", request);
         // 获取具体字段
-        String identity = (String) request.get("Identity");
+//        String identity = (String) request.get("Identity");
         if (command.equals("link")) {
-            sendSuccessBack(ctx, identity);
+            sendSuccessBack(ctx, ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get());
         } else {
             log.info("视频话机数据写入Disruptor:{}", data);
-            DeviceData msg = new DeviceData(identity, data, ProtocolIdentifier.PROTOCOL_VIDEO);
+            DeviceData msg = new DeviceData(ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get(), data, ProtocolIdentifier.PROTOCOL_VIDEO);
             producer.onData(msg, DeviceDataEvent.Type.TO_TB);
         }
     }
@@ -97,7 +94,7 @@ public class DataInboundHandlerVideo extends ChannelInboundHandlerAdapter implem
             // 转换为JSON字符串
             String jsonResponse = objectMapper.writeValueAsString(message);
             // 发送数据
-            VideoParserUtil.sendData(ctx, protocolType, jsonResponse);
+            VideoParserUtil.sendData(ctx.channel(), "link", jsonResponse);
         } catch (Exception e) {
             log.error("构建认证响应失败", e);
             ctx.close();

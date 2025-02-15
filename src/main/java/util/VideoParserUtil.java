@@ -1,6 +1,5 @@
 package util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -95,10 +94,11 @@ public class VideoParserUtil {
     /**
      * 发送数据 (可能需要分包)
      */
-    public static void sendData(ChannelHandlerContext ctx, byte[] protocolType, String jsonData) {
+    public static void sendData(Channel channel, String method, String jsonData) {
         byte[] jsonBytes = jsonData.getBytes(StandardCharsets.UTF_8);
         int dataLength = jsonBytes.length;
-        int sessionIndex = getAndIncrementSessionCounter(ctx.channel());
+        int sessionIndex = getAndIncrementSessionCounter(channel);
+        byte[] protocolType = ProtocolTypeMapper.getProtocolTypeByMethod(method);
 
         // 计算总包数
         int totalPackets = (dataLength + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
@@ -115,7 +115,7 @@ public class VideoParserUtil {
 
             // 发送
             int finalI = i;
-            ctx.writeAndFlush(buffer)
+            channel.writeAndFlush(buffer)
                     .addListener(future -> {
                         if (future.isSuccess()) {
                             log.info("数据包发送成功 (包序号: {}/{})", finalI + 1, totalPackets);

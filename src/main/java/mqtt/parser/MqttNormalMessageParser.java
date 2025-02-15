@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import protocol.ProtocolIdentifier;
 
 /**
@@ -17,7 +15,7 @@ import protocol.ProtocolIdentifier;
  **/
 
 @Slf4j
-public class MqttMessageParserNormal implements MqttMessageParser{
+public class MqttNormalMessageParser implements MqttMessageParser{
 
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {

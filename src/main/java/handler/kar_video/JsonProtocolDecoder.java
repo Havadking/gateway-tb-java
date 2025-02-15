@@ -48,9 +48,13 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
             resultMap.put("command", rootNode.get("command").asText());
         }
 
-        // 提取 request 对象
+        // 提取 request 或者 response 对象
         if (rootNode.has("request")) {
             resultMap.put("request", objectMapper.convertValue(rootNode.get("request"), Map.class));
+        } else if (rootNode.has("response")) {
+            resultMap.put("response", objectMapper.convertValue(rootNode.get("response"), Map.class));
+        } else {
+            log.error("卡尔视频话机解释数据错误:{}", rootNode);
         }
 
         out.add(resultMap);

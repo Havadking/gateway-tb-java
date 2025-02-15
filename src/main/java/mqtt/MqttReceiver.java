@@ -17,6 +17,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.ProtocolIdentifier;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -152,15 +153,20 @@ public class MqttReceiver implements MqttCallback {
         int id = rootNode.get("data").get("id").asInt();
         // 1. 根据 Topic 或消息内容确定协议类型
         ProtocolIdentifier protocolType = determineProtocolType(method);
+        if (protocolType == null) {
+            // 不处理
+            log.info("【{}】种类信息暂时不处理", method);
+            return;
+        }
 
         // 2. 获取 MqttMessageParser
         MqttMessageParser parser = parserFactory.getParser(protocolType);
 
-        // 放入 Disruptor
+        // 3. 放入 Disruptor
         DeviceData data = parser.parseMessage(message);
         producer.onData(data, DeviceDataEvent.Type.TO_DEVICE);
 
-        // 发送确认收到的信息
+        // 4. 发送确认收到的信息
         sendConfirmationResponse(topic, device, id);
     }
 
@@ -169,9 +175,11 @@ public class MqttReceiver implements MqttCallback {
             // 普通话机
             log.info("普通话机下发数据");
             return ProtocolIdentifier.PROTOCOL_NORMAL;
+        } else if (Objects.equals(method, "tcp_rpc")) {
+            log.info("视频话机下发数据");
+            return ProtocolIdentifier.PROTOCOL_VIDEO;
         }
-        log.info("视频话机下发数据");
-        return ProtocolIdentifier.PROTOCOL_VIDEO;
+        return null;
     }
 
     /**

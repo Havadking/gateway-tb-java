@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import util.PDUUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -20,7 +18,7 @@ import java.nio.charset.StandardCharsets;
  **/
 
 @Slf4j
-public class MqttMessageBuilderNormal implements MqttMessageBuilder {
+public class MqttMessageNormalBuilder implements MqttMessageBuilder {
 
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {

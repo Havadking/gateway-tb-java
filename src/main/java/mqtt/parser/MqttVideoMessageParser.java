@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import protocol.ProtocolIdentifier;
 import util.VideoParserUtil;
 
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,8 +20,8 @@ import java.util.Map;
  * @create: 2025-02-14 11:18
  **/
 
-public class MqttMessageParserVideo implements MqttMessageParser {
-    private static final Logger log = LoggerFactory.getLogger(MqttMessageParserVideo.class);
+public class MqttVideoMessageParser implements MqttMessageParser {
+    private static final Logger log = LoggerFactory.getLogger(MqttVideoMessageParser.class);
 
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
@@ -48,6 +47,7 @@ public class MqttMessageParserVideo implements MqttMessageParser {
         responseMsg.put("type", "terminal");
         responseMsg.put("command", command);
         responseMsg.put(VideoParserUtil.getToDeviceMessageType(command), paramsNode.get("data"));
+//        responseMsg.put("protocolType", paramsNode.get("protocolType").asText());
 
         log.info("视频话机解析的值为:{}", responseMsg);
         // 创建并返回 DeviceData 对象

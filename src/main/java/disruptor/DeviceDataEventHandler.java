@@ -1,5 +1,6 @@
 package disruptor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lmax.disruptor.EventHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -9,7 +10,13 @@ import mqtt.MqttSender;
 import mqtt.builder.MqttMessageBuilder;
 import mqtt.builder.MqttMessageBuilderFactory;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import protocol.ProtocolIdentifier;
+import protocol.sender.TcpMessageSender;
+import protocol.sender.TcpMessageSenderFactory;
 import registry.DeviceRegistry;
+import util.VideoParserUtil;
+
+import java.util.Map;
 
 /**
  * @program: gateway-netty
@@ -37,6 +44,11 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
      */
     private final MqttMessageBuilderFactory builderFactory;
 
+    /**
+     * TCP消息发送器工厂
+     */
+    private final TcpMessageSenderFactory senderFactory;
+
 
     /**
      * 处理设备数据事件。
@@ -51,8 +63,8 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
      */
     @Override
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
+        log.info("消费了{}，数据为{}", sequence, event.getValue().getMsg());
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
-            log.info("【发往thingsboard】消费了{}，数据为{}", sequence, event.getValue().getMsg());
             // 1. 获取对应的信息构建器
             MqttMessageBuilder builder = builderFactory.getBuilder(event.getValue().getProtocolType());
             // 2. 构建 MQTT 消息
@@ -60,28 +72,13 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
             // 3. 发送 MQTT 信息
             mqttSender.sendToThingsboard(message);
         } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
-            log.info("【发往设备】消费了{}, 数据为{}", sequence, event.getValue());
             // 由Thingsboard发送到设备
+            // 1. 获取该数据流的 Channel
             Channel channel = deviceRegistry.getChannel(event.getValue().getDeviceId());
-            if (channel != null && channel.isActive()) {
-                try {
-                    // 从 Channel 的 ByteBufAllocator 分配 ByteBuf
-                    ByteBuf buf = channel.alloc().buffer();
-                    try {
-                        // 写入数据
-                        buf.writeBytes(event.getValue().serializeMsg());
-                        // 写入并刷新 Channel
-                        channel.writeAndFlush(buf);
-                    } catch (Exception e) {
-                        // 确保在异常情况下释放 ByteBuf
-                        buf.release();
-                        throw e;
-                    }
-                } catch (Exception e) {
-                    // 处理异常
-                    log.error("Error writing to channel", e);
-                }
-            }
+            // 2. 获取对应的信息发送器
+            TcpMessageSender sender = senderFactory.getSender(event.getValue().getProtocolType());
+            // 3. 发送数据到设备
+            sender.sendMessageToDevice(event.getValue(), channel);
         }
         event.clear();
     }

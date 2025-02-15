@@ -22,6 +22,7 @@ import mqtt.builder.MqttMessageBuilderFactory;
 import mqtt.parser.MqttMessageParserFactory;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import protocol.ProtocolHandlerFactory;
+import protocol.sender.TcpMessageSenderFactory;
 import registry.DeviceRegistry;
 
 /**
@@ -58,8 +59,9 @@ public class ThingsboardGateway {
 
         // 4. 连接 Disruptor 的 Handler
         MqttMessageBuilderFactory builderFactory = MqttMessageBuilderFactory.createDefault();
+        TcpMessageSenderFactory senderFactory = TcpMessageSenderFactory.createDefault();
         disruptor.handleEventsWith(
-                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory)
+                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory)
         );
 
         // 5. 启动 Disruptor

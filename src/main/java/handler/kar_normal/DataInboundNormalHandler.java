@@ -20,7 +20,7 @@ import util.PDUUtil;
 
 @Slf4j
 @AllArgsConstructor
-public class DataInboundHandlerNormal extends ChannelInboundHandlerAdapter implements DataInboundHandler {
+public class DataInboundNormalHandler extends ChannelInboundHandlerAdapter implements DataInboundHandler {
 
     /**
      * 设备数据事件生产者

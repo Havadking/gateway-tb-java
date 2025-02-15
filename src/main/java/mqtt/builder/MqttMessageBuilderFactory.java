@@ -1,10 +1,6 @@
 package mqtt.builder;
 
 import exceptions.UnsupportedProtocolException;
-import mqtt.parser.MqttMessageParser;
-import mqtt.parser.MqttMessageParserFactory;
-import mqtt.parser.MqttMessageParserNormal;
-import mqtt.parser.MqttMessageParserVideo;
 import protocol.ProtocolIdentifier;
 
 import java.util.HashMap;
@@ -57,8 +53,8 @@ public class MqttMessageBuilderFactory {
     public static MqttMessageBuilderFactory createDefault() {
         // 注册默认的解析器
         MqttMessageBuilderFactory factory = new MqttMessageBuilderFactory();
-        factory.registerBuilder(ProtocolIdentifier.PROTOCOL_NORMAL, new MqttMessageBuilderNormal());
-        factory.registerBuilder(ProtocolIdentifier.PROTOCOL_VIDEO, new MqttMessageBuilderVideo());
+        factory.registerBuilder(ProtocolIdentifier.PROTOCOL_NORMAL, new MqttMessageNormalBuilder());
+        factory.registerBuilder(ProtocolIdentifier.PROTOCOL_VIDEO, new MqttMessageVideoBuilder());
         return factory;
     }
 }

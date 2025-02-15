@@ -20,7 +20,7 @@ import java.util.Map;
  **/
 
 @Slf4j
-public class MqttMessageBuilderVideo implements MqttMessageBuilder{
+public class MqttMessageVideoBuilder implements MqttMessageBuilder{
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {
         // 获取常量

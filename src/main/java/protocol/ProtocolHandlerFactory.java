@@ -2,10 +2,10 @@ package protocol;
 
 import disruptor.DeviceDataEventProducer;
 import exceptions.UnsupportedProtocolException;
-import handler.kar_normal.AuthenticationHandlerNormal;
-import handler.kar_normal.DataInboundHandlerNormal;
-import handler.kar_video.AuthenticationHandlerVideo;
-import handler.kar_video.DataInboundHandlerVideo;
+import handler.kar_normal.AuthenticationNormalHandler;
+import handler.kar_normal.DataInboundNormalHandler;
+import handler.kar_video.AuthenticationVideoHandler;
+import handler.kar_video.DataInboundVideoHandler;
 import handler.kar_video.JsonProtocolDecoder;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.string.StringDecoder;
@@ -101,13 +101,13 @@ public class ProtocolHandlerFactory {
         ProtocolHandlerFactory factory = new ProtocolHandlerFactory();
 
         // 注册普通话机的协议的 handler
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new AuthenticationHandlerNormal(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new DataInboundHandlerNormal(producer));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new AuthenticationNormalHandler(deviceRegistry));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new DataInboundNormalHandler(producer));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_NORMAL, StringDecoder::new);
 
         // 注册视频话机的协议的 handler
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new AuthenticationHandlerVideo(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundHandlerVideo(producer));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new AuthenticationVideoHandler(deviceRegistry));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundVideoHandler(producer));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
 
         return factory;
