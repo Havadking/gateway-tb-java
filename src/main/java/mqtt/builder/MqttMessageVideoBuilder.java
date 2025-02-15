@@ -3,7 +3,10 @@ package mqtt.builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import util.LogUtils;
 import util.VideoParserUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -19,8 +22,8 @@ import java.util.Map;
  * @create: 2025-02-14 15:23
  **/
 
-@Slf4j
 public class MqttMessageVideoBuilder implements MqttMessageBuilder{
+
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {
         // 获取常量
@@ -54,7 +57,7 @@ public class MqttMessageVideoBuilder implements MqttMessageBuilder{
         MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
         message.setQos(1);
 
-        log.info("视频话机创建MQTT信息成功{}", message);
+        LogUtils.logBusiness("视频话机创建MQTT信息成功{}", message);
 
         return message;
     }

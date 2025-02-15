@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import util.LogUtils;
 import util.PDUUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -17,7 +20,6 @@ import java.nio.charset.StandardCharsets;
  * @create: 2025-02-14 15:23
  **/
 
-@Slf4j
 public class MqttMessageNormalBuilder implements MqttMessageBuilder {
 
     @Override
@@ -42,7 +44,7 @@ public class MqttMessageNormalBuilder implements MqttMessageBuilder {
         // 创建 MQTT 消息对象
         MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
         message.setQos(1);
-        log.info("普通话机创建MQTT信息成功{}", message);
+        LogUtils.logBusiness("普通话机创建MQTT信息成功{}", message);
 
         return message;
     }

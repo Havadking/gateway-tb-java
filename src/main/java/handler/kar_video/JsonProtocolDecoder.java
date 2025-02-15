@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import util.LogUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +23,6 @@ import java.util.Map;
 
 public class JsonProtocolDecoder extends ByteToMessageDecoder {
     private static final int HEADER_LENGTH = 20; // 根据实际头部长度调整
-    private static final Logger log = LoggerFactory.getLogger(JsonProtocolDecoder.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -38,7 +39,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
 
         // 解析 JSON 字符串
         JsonNode rootNode = objectMapper.readTree(new String(jsonBytes));
-        log.info("rootNode is {}", rootNode);
+        LogUtils.logBusiness("rootNode is {}", rootNode);
         // 创建结果 Map
         Map<String, Object> resultMap = new HashMap<>();
 
@@ -48,7 +49,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
             Map<String, String> params = new HashMap<>();
             params.put("heartbeat", "gateway make");
             resultMap.put("request", objectMapper.convertValue(params, Map.class));
-            log.info("【心跳】构建的心跳包为{}", resultMap);
+            LogUtils.logBusiness("【心跳】构建的心跳包为{}", resultMap);
             out.add(resultMap);
         } else {
             // 其他的方法处理
@@ -59,7 +60,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
 
             if (resultMap.get("command").equals("devstatus")) {
                 // 设备状态，当作属性来发送，不走遥测发送的通道了
-                log.info("devstatus 作为属性发送");
+                LogUtils.logBusiness("devstatus 作为属性发送");
                 // todo 属性发送
             } else {
                 // 提取 request 或者 response 对象
@@ -68,7 +69,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
                 } else if (rootNode.has("response")) {
                     resultMap.put("response", objectMapper.convertValue(rootNode.get("response"), Map.class));
                 } else {
-                    log.error("卡尔视频话机解释数据错误:{}", rootNode);
+                    LogUtils.logError("卡尔视频话机解释数据错误:{}", new Throwable(), rootNode);
                     return;
                 }
                 out.add(resultMap);

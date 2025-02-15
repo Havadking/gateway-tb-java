@@ -10,12 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import mqtt.parser.MqttMessageParser;
 import mqtt.parser.MqttMessageParserFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.ProtocolIdentifier;
+import util.LogUtils;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -31,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 
 
-@Slf4j
 public class MqttReceiver implements MqttCallback {
     /**
      * 设备数据事件生产者
@@ -71,7 +73,7 @@ public class MqttReceiver implements MqttCallback {
     public void start() throws MqttException {
         // 订阅服务器的RPC命令
         mqttClient.subscribe(GatewayConfig.RPC_TOPIC);
-        log.info("MQTT 订阅 RPC 地址成功");
+        LogUtils.logBusiness("MQTT 订阅 RPC 地址成功");
     }
 
 
@@ -82,7 +84,7 @@ public class MqttReceiver implements MqttCallback {
      */
     @Override
     public void connectionLost(Throwable cause) {
-        log.error("MQTT connection lost: {}", cause.getMessage());
+        LogUtils.logError("MQTT connection lost: {}", cause, cause.getMessage());
 
         // 避免重复重连
         if (isReconnecting) {
@@ -106,13 +108,13 @@ public class MqttReceiver implements MqttCallback {
         if (reconnectAttempts.get() < GatewayConfig.RECEIVER_RECONNECT_RETRY) {
             // 指数退避
             long delay = (long) Math.pow(2, reconnectAttempts.getAndIncrement());
-            log.info("Attempting to reconnect to MQTT broker in {} seconds...", delay);
+            LogUtils.logBusiness("Attempting to reconnect to MQTT broker in {} seconds...", delay);
 
             scheduler.schedule(() -> {
                 try {
                     if (!mqttClient.isConnected()) {
                         mqttClient.reconnect();
-                        log.info("Successfully reconnected to MQTT broker.");
+                        LogUtils.logBusiness("Successfully reconnected to MQTT broker.");
                         // 重连成功，重置标志位
                         isReconnecting = false;
                         //重置计数器
@@ -121,13 +123,13 @@ public class MqttReceiver implements MqttCallback {
                         start();
                     }
                 } catch (Exception e) {
-                    log.info("Failed to reconnect to MQTT broker: {}, retry is {}", e.getMessage(), reconnectAttempts.get());
+                    LogUtils.logBusiness("Failed to reconnect to MQTT broker: {}, retry is {}", e.getMessage(), reconnectAttempts.get());
                     // 继续尝试重连
                     scheduleReconnect();
                 }
             }, delay, TimeUnit.SECONDS);
         } else {
-            log.error("【严重】MQTT订阅失败，已达到最大重试次数【严重】");
+            LogUtils.logError("【严重】MQTT订阅失败，已达到最大重试次数【严重】{}",new MqttException(new Exception("订阅失败")));
             // 达到最大重连次数，停止重连
             isReconnecting = false;
             // todo 是否需要发送短信提醒
@@ -144,7 +146,7 @@ public class MqttReceiver implements MqttCallback {
      */
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-        log.info("收到来自thingsboard的消息 {}", message);
+        LogUtils.logBusiness("【收到thingsboard】的消息 {}", message);
         String messageContent = new String(message.getPayload());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(messageContent);
@@ -155,7 +157,7 @@ public class MqttReceiver implements MqttCallback {
         ProtocolIdentifier protocolType = determineProtocolType(method);
         if (protocolType == null) {
             // 不处理
-            log.info("【{}】种类信息暂时不处理", method);
+            LogUtils.logBusiness("【{}】种类信息暂时不处理", method);
             return;
         }
 
@@ -173,10 +175,10 @@ public class MqttReceiver implements MqttCallback {
     private ProtocolIdentifier determineProtocolType(String method) {
         if (method.equals("send_msg")) {
             // 普通话机
-            log.info("普通话机下发数据");
+            LogUtils.logBusiness("普通话机下发数据");
             return ProtocolIdentifier.PROTOCOL_NORMAL;
         } else if (Objects.equals(method, "tcp_rpc")) {
-            log.info("视频话机下发数据");
+            LogUtils.logBusiness("视频话机下发数据");
             return ProtocolIdentifier.PROTOCOL_VIDEO;
         }
         return null;

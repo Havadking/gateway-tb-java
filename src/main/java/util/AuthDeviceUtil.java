@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -21,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
  * @create: 2025-02-07 11:11
  **/
 
-@Slf4j
 public class AuthDeviceUtil {
 
     /**
@@ -133,7 +134,7 @@ public class AuthDeviceUtil {
             boolean content = getDeviceAuth(deviceNo);
             System.out.println("Content: " + content);
         } catch (Exception e) {
-            log.error("调用出现错误:{}",e.getMessage());
+            LogUtils.logError("调用出现错误:{}", e,e.getMessage());
         }
     }
 

@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.ProtocolIdentifier;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -14,13 +17,11 @@ import protocol.ProtocolIdentifier;
  * @create: 2025-02-14 11:17
  **/
 
-@Slf4j
 public class MqttNormalMessageParser implements MqttMessageParser{
 
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
         String messageContent = new String(message.getPayload());
-
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(messageContent);
 
@@ -28,7 +29,7 @@ public class MqttNormalMessageParser implements MqttMessageParser{
         String device = rootNode.get("device").asText();
         // 构造成设备接收所需要的类型
         String body = appendHexLength("*#F#" + rootNode.get("data").get("params").get("body").asText());
-        log.info("普通话机解析的值为:{}", body);
+        LogUtils.logBusiness("普通话机解析的值为:{}", body);
         return new DeviceData(device, body, ProtocolIdentifier.PROTOCOL_NORMAL);
     }
 

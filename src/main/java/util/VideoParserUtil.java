@@ -6,6 +6,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 2025-02-14 17:26
  **/
 
-@Slf4j
 public class VideoParserUtil {
     //同步标识
     private static final byte asyncIdentityPrefix = 0x40;
@@ -118,9 +119,9 @@ public class VideoParserUtil {
             channel.writeAndFlush(buffer)
                     .addListener(future -> {
                         if (future.isSuccess()) {
-                            log.info("数据包发送成功 (包序号: {}/{})", finalI + 1, totalPackets);
+                            LogUtils.logBusiness("数据包发送成功 (包序号: {}/{})", finalI + 1, totalPackets);
                         } else {
-                            log.error("数据包发送失败 (包序号: {}/{})", finalI + 1, totalPackets, future.cause());
+                            LogUtils.logError("数据包发送失败 (包序号: {}/{})", new Throwable(), finalI + 1, totalPackets, future.cause());
                         }
                     });
         }

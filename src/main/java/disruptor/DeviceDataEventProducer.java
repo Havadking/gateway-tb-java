@@ -2,8 +2,10 @@ package disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -13,7 +15,6 @@ import model.DeviceData;
  **/
 
 @AllArgsConstructor
-@Slf4j
 public class DeviceDataEventProducer {
     public final RingBuffer<DeviceDataEvent> ringBuffer;
 
@@ -37,7 +38,7 @@ public class DeviceDataEventProducer {
         } finally {
             // 发布事件
             ringBuffer.publish(sequence);
-            log.info("生产了{},生产内容为{}", sequence, data);
+            LogUtils.logBusiness("生产了{},生产内容为{}", sequence, data);
         }
     }
 

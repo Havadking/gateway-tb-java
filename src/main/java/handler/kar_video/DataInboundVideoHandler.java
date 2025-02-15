@@ -10,7 +10,10 @@ import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import protocol.ProtocolIdentifier;
+import util.LogUtils;
 import util.VideoParserUtil;
 
 import java.time.LocalDateTime;
@@ -24,7 +27,6 @@ import java.util.Map;
  * @author: Havad
  * @create: 2025-02-13 15:40
  **/
-@Slf4j
 @AllArgsConstructor
 public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implements DataInboundHandler {
     /**
@@ -55,11 +57,11 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
         if (request == null) {
             request = (Map<String, Object>) messageMap.get("response");
         }
-        log.info("request is {}", request);
+        LogUtils.logBusiness("request is {}", request);
         if (command.equals("link")) {
             sendSuccessBack(ctx, ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get());
         } else {
-            log.info("视频话机数据写入Disruptor:{}", data);
+            LogUtils.logBusiness("视频话机数据写入Disruptor:{}", data);
             DeviceData msg = new DeviceData(ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get(), data, ProtocolIdentifier.PROTOCOL_VIDEO);
             producer.onData(msg, DeviceDataEvent.Type.TO_TB);
         }
@@ -72,7 +74,7 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
      * @param identity 设备标识
      */
     private void sendSuccessBack(ChannelHandlerContext ctx, String identity) {
-        log.info("收到【link】请求，直接进行处理:{}", identity);
+        LogUtils.logBusiness("收到【link】请求，直接进行处理:{}", identity);
         try {
             // 构建响应数据
             Map<String, Object> response = new HashMap<>();
@@ -92,7 +94,7 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
             // 发送数据
             VideoParserUtil.sendData(ctx.channel(), "link", jsonResponse);
         } catch (Exception e) {
-            log.error("构建认证响应失败", e);
+            LogUtils.logError("构建认证响应失败", e);
             ctx.close();
         }
     }

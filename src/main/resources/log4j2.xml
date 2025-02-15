@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="30">
+    <Properties>
+        <!-- 日志存储路径 -->
+        <Property name="LOG_HOME">logs</Property>
+
+        <!-- 日志格式 -->
+        <Property name="PATTERN_FORMAT">%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{bright,white} %style{[%-6level]}{DEBUG=bright,blue, INFO=bright,green} %style{[%-15.15t]}{bright,cyan} %style{%-40.40logger{36}}{bright,magenta} %style{[%-20.20method:%-4.4line]}{bright,yellow} %style{-}{white} %style{%msg}{INFO=bright,white, DEBUG=bright,cyan}%n</Property>
+
+        <!-- 文件日志格式（不带颜色） -->
+        <Property name="FILE_PATTERN_FORMAT">
+            %d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%t] %logger{36} [%method:%line] - %msg%n
+        </Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATTERN_FORMAT}"/>
+        </Console>
+
+        <!-- 业务日志 -->
+        <RollingFile name="BusinessLog"
+                     fileName="${LOG_HOME}/business/app.log"
+                     filePattern="${LOG_HOME}/business/app-%d{yyyy-MM}/%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN_FORMAT}"/>
+            <Policies>
+                <!-- 每天轮转 -->
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <!-- 单个文件大小限制 -->
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <!-- 文件保留策略 -->
+            <DefaultRolloverStrategy>
+                <Delete basePath="${LOG_HOME}/business" maxDepth="2">
+                    <!-- 删除超过365天的日志 -->
+                    <IfLastModified age="365d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- 错误日志，单独存储 -->
+        <RollingFile name="ErrorLog"
+                     fileName="${LOG_HOME}/error/error.log"
+                     filePattern="${LOG_HOME}/error/error-%d{yyyy-MM}/%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN_FORMAT}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${LOG_HOME}/error" maxDepth="2">
+                    <IfLastModified age="365d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+            <!-- 只记录错误级别日志 -->
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <!-- 性能监控日志 -->
+        <RollingFile name="PerformanceLog"
+                     fileName="${LOG_HOME}/performance/perf.log"
+                     filePattern="${LOG_HOME}/performance/perf-%d{yyyy-MM}/%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN_FORMAT}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${LOG_HOME}/performance" maxDepth="2">
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Netty日志配置 -->
+        <Logger name="io.netty" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="BusinessLog"/>
+        </Logger>
+
+        <!-- 性能日志配置 -->
+        <Logger name="com.gateway.performance" level="INFO" additivity="false">
+            <AppenderRef ref="PerformanceLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- 根日志配置 -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="BusinessLog"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Root>
+    </Loggers>
+</Configuration>

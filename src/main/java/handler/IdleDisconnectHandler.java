@@ -7,7 +7,10 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import registry.DeviceRegistry;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -16,7 +19,6 @@ import registry.DeviceRegistry;
  * @create: 2025-02-12 14:16
  **/
 
-@Slf4j
 @AllArgsConstructor
 public class IdleDisconnectHandler extends ChannelInboundHandlerAdapter {
 
@@ -41,7 +43,7 @@ public class IdleDisconnectHandler extends ChannelInboundHandlerAdapter {
             if (e.state() == IdleState.READER_IDLE) {
                 // 获取设备ID
                 String deviceId = ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get();
-                log.info("【超时关闭】{}【超时关闭】", deviceId);
+                LogUtils.logBusiness("【超时关闭】{}【超时关闭】", deviceId);
                 // 关闭连接
                 ctx.close();
             }

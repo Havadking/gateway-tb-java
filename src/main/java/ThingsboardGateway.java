@@ -20,10 +20,13 @@ import mqtt.MqttReceiver;
 import mqtt.MqttSender;
 import mqtt.builder.MqttMessageBuilderFactory;
 import mqtt.parser.MqttMessageParserFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import protocol.ProtocolHandlerFactory;
 import protocol.sender.TcpMessageSenderFactory;
 import registry.DeviceRegistry;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -32,7 +35,6 @@ import registry.DeviceRegistry;
  * @create: 2025-02-07 14:41
  **/
 
-@Slf4j
 public class ThingsboardGateway {
     public static void main(String[] args) throws Exception {
         // 1. 创建 Disruptor
@@ -90,7 +92,7 @@ public class ThingsboardGateway {
                     });
 
             ChannelFuture f = b.bind(GatewayConfig.PORT).sync();
-            log.info("Gateway server started on port {}", GatewayConfig.PORT);
+            LogUtils.logBusiness("Gateway server started on port {}", GatewayConfig.PORT);
             f.channel().closeFuture().sync();
 
         } finally {

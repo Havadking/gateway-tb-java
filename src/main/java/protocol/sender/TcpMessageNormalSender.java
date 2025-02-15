@@ -4,6 +4,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -12,13 +15,13 @@ import model.DeviceData;
  * @create: 2025-02-15 09:34
  **/
 
-@Slf4j
 public class TcpMessageNormalSender implements TcpMessageSender {
+
     @Override
     public void sendMessageToDevice(DeviceData data, Channel channel) {
-        log.info("【发往设备】【普通话机】数据为{}", data);
+        LogUtils.logBusiness("【发往设备】【普通话机】数据为{}", data);
         if (channel == null || !channel.isActive()) {
-            log.error("【发送失败】通道为空或未激活");
+            LogUtils.logError("【发送失败】通道为空或未激活", new Throwable());
             return;
         }
 
@@ -34,9 +37,9 @@ public class TcpMessageNormalSender implements TcpMessageSender {
             // 写入并刷新 Channel
             channel.writeAndFlush(buf).addListener(future -> {
                 if (future.isSuccess()) {
-                    log.info("【发送成功】消息已发送至设备，数据长度：{} 字节", messageBytes.length);
+                    LogUtils.logBusiness("【发送成功】消息已发送至设备，数据长度：{} 字节", messageBytes.length);
                 } else {
-                    log.error("【发送失败】消息发送失败", future.cause());
+                    LogUtils.logError("【发送失败】消息发送失败", future.cause());
                 }
             });
 
@@ -44,7 +47,7 @@ public class TcpMessageNormalSender implements TcpMessageSender {
             buf = null;
 
         } catch (Exception e) {
-            log.error("【发送失败】消息发送过程中发生异常", e);
+            LogUtils.logError("【发送失败】消息发送过程中发生异常", e);
             if (buf != null) {
                 buf.release();
             }

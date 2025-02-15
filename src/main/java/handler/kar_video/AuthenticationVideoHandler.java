@@ -5,8 +5,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import registry.DeviceRegistry;
 import util.AuthDeviceUtil;
+import util.LogUtils;
 
 import java.util.Map;
 
@@ -17,7 +20,6 @@ import java.util.Map;
  * @create: 2025-02-13 15:40
  **/
 
-@Slf4j
 public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter implements AuthenticationHandler {
 
     public final DeviceRegistry deviceRegistry;
@@ -28,7 +30,7 @@ public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter imp
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        log.info("卡尔视频话机读取第一条数据{}", msg);
+        LogUtils.logBusiness("卡尔视频话机读取第一条数据{}", msg);
         authenticate(ctx, msg);
     }
 
@@ -42,18 +44,18 @@ public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter imp
         // 获取 request 内容
         @SuppressWarnings("unchecked")
         Map<String, Object> request = (Map<String, Object>) messageMap.get("request");
-        log.info("request is {}", request);
+        LogUtils.logBusiness("request is {}", request);
         // 获取具体字段
         String identity = (String) request.get("Identity");
 
         // 2. 检验是否为link
         if (!command.equals("link")) {
-            log.info("卡尔视频话机协议格式验证失败<发送非link但验证>：{}", msg);
+            LogUtils.logBusiness("卡尔视频话机协议格式验证失败<发送非link但验证>：{}", msg);
             ctx.close();
         } else {
-            log.info("卡尔视频话机协议格式验证成功<发送link验证>：{}", msg);
+            LogUtils.logBusiness("卡尔视频话机协议格式验证成功<发送link验证>：{}", msg);
             if (AuthDeviceUtil.getDeviceAuth(identity)) {
-                log.info("卡尔视频话机认证成功：{}", identity);
+                LogUtils.logBusiness("卡尔视频话机认证成功：{}", identity);
                 deviceRegistry.register(identity, ctx.channel());
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(identity);
                 //将消息传递到下一个Inbound
@@ -61,7 +63,7 @@ public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter imp
                 // 移除自身,避免多次认证
                 ctx.pipeline().remove(this);
             } else {
-                log.info("卡尔视频话机认证失败：{}", identity);
+                LogUtils.logBusiness("卡尔视频话机认证失败：{}", identity);
                 ctx.close();
                 // todo 是否需要做重试机制
             }

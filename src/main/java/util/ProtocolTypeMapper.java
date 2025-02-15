@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * @program: gateway-netty
- * @description:
+ * @description: 卡尔视频话机协议名称和编码的映射
  * @author: Havad
  * @create: 2025-02-14 19:48
  **/

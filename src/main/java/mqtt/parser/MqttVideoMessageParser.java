@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.CharsetUtil;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import protocol.ProtocolIdentifier;
+import util.LogUtils;
 import util.VideoParserUtil;
 
 import java.util.HashMap;
@@ -21,13 +22,11 @@ import java.util.Map;
  **/
 
 public class MqttVideoMessageParser implements MqttMessageParser {
-    private static final Logger log = LoggerFactory.getLogger(MqttVideoMessageParser.class);
 
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
         // 创建 ObjectMapper 用于 JSON 解析
         ObjectMapper mapper = new ObjectMapper();
-
         // 将消息内容转换为字符串
         String messageContent = new String(message.getPayload(), CharsetUtil.UTF_8);
 
@@ -47,9 +46,8 @@ public class MqttVideoMessageParser implements MqttMessageParser {
         responseMsg.put("type", "terminal");
         responseMsg.put("command", command);
         responseMsg.put(VideoParserUtil.getToDeviceMessageType(command), paramsNode.get("data"));
-//        responseMsg.put("protocolType", paramsNode.get("protocolType").asText());
 
-        log.info("视频话机解析的值为:{}", responseMsg);
+        LogUtils.logBusiness("视频话机解析的值为:{}", responseMsg);
         // 创建并返回 DeviceData 对象
         return new DeviceData(deviceId, responseMsg, ProtocolIdentifier.PROTOCOL_VIDEO);
     }

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import config.GatewayConfig;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import util.LogUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -22,7 +22,6 @@ import java.util.Random;
  **/
 
 @AllArgsConstructor
-@Slf4j
 public class MqttSender {
     private final MqttClient mqttClient;
     private static final Random RANDOM = new Random();
@@ -61,12 +60,12 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.CONNECT_TOPIC, message);
-            log.info("设备连接{}", deviceNo);
+            LogUtils.logBusiness("设备连接{}", deviceNo);
         } catch (JsonProcessingException e) {
-            log.error("生成设备连接 JSON 消息失败：{}", e.getMessage());
+            LogUtils.logError("生成设备连接 JSON 消息失败：{}", e);
             throw new RuntimeException(e);
         } catch (MqttException e) {
-            log.error("发布设备连接 MQTT 消息失败：{}", e.getMessage());
+            LogUtils.logError("发布设备连接 MQTT 消息失败：{}", e);
             throw new RuntimeException(e);
         }
 
@@ -104,12 +103,12 @@ public class MqttSender {
 
             // 发布消息到指定topic
             mqttClient.publish(GatewayConfig.DISCONNECT_TOPIC, message);
-            log.info("设备断开{}", deviceNo);
+            LogUtils.logBusiness("设备断开{}", deviceNo);
         } catch (JsonProcessingException e) {
-            log.error("生成设备断开 JSON 消息失败：{}", e.getMessage());
+            LogUtils.logError("生成设备断开 JSON 消息失败：{}", e);
             throw new RuntimeException(e);
         } catch (MqttException e) {
-            log.error("发布设备断开 MQTT 消息失败：{}", e.getMessage());
+            LogUtils.logError("发布设备断开 MQTT 消息失败：{}", e);
             throw new RuntimeException(e);
         }
 
@@ -128,10 +127,10 @@ public class MqttSender {
         int currentRetry = 0;
         while (currentRetry <= maxRetries) {
             try {
-                log.info("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
+                LogUtils.logBusiness("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                log.info("视频话机发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
+                LogUtils.logBusiness("视频话机发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
                 // 发送成功，退出循环
                 break;
             } catch (Exception e) {
@@ -140,7 +139,7 @@ public class MqttSender {
                 }
                 currentRetry++;
                 if (currentRetry > maxRetries) {
-                    log.error("发送遥测数据失败，已达到最大重试次数（{}次）：{}", maxRetries, e.getMessage());
+                    LogUtils.logError("{}发送遥测数据失败，已达到最大重试次数（{}次）", e, maxRetries);
                     throw new RuntimeException("发送遥测数据失败，已达到最大重试次数", e);
                 }
                 // 计算指数退避时间
@@ -148,7 +147,7 @@ public class MqttSender {
                         baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
                         maxIntervalMs
                 );
-                log.warn("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
+                LogUtils.logBusiness("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
                         retryIntervalMs, currentRetry, e.getMessage());
                 try {
                     Thread.sleep(retryIntervalMs);

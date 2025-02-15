@@ -8,9 +8,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import protocol.ProtocolHandlerFactory;
 import protocol.ProtocolIdentifier;
+import util.LogUtils;
 
 import java.util.List;
 
@@ -22,9 +24,7 @@ import java.util.List;
  **/
 
 @AllArgsConstructor
-@Slf4j
 public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
-
     private static final byte PROTOCOL_A_HEADER = '*';  // 第一种协议以 '*' 开头
     private static final byte PROTOCOL_B_HEADER = '@';  // 第二种协议以 '@' 开头
 
@@ -34,8 +34,7 @@ public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 1. 检测协议类型
         ProtocolIdentifier protocolId = detectProtocol(ctx, msg);
-        log.info("信息{}对应的设备类型为:{}", msg, protocolId);
-
+        LogUtils.logBusiness("信息{}对应的设备类型为:{}", msg, protocolId);
         // 2. 从工厂中获取对应 Handler
         // 获取所有 handlers
         List<ChannelHandler> handlers = handlerFactory.getHandlers(protocolId);

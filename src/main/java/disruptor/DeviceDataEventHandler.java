@@ -1,22 +1,18 @@
 package disruptor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lmax.disruptor.EventHandler;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttSender;
 import mqtt.builder.MqttMessageBuilder;
 import mqtt.builder.MqttMessageBuilderFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import protocol.ProtocolIdentifier;
 import protocol.sender.TcpMessageSender;
 import protocol.sender.TcpMessageSenderFactory;
 import registry.DeviceRegistry;
-import util.VideoParserUtil;
-
-import java.util.Map;
+import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -25,7 +21,6 @@ import java.util.Map;
  * @create: 2025-02-08 17:15
  **/
 
-@Slf4j
 @AllArgsConstructor
 public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
 
@@ -63,7 +58,7 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
      */
     @Override
     public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
-        log.info("消费了{}，数据为{}", sequence, event.getValue().getMsg());
+        LogUtils.logBusiness("消费了{}，数据为{}", sequence, event.getValue().getMsg());
         if (event.getType() == DeviceDataEvent.Type.TO_TB) {
             // 1. 获取对应的信息构建器
             MqttMessageBuilder builder = builderFactory.getBuilder(event.getValue().getProtocolType());

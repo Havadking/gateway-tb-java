@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import util.LogUtils;
 import util.VideoParserUtil;
 
 import java.util.Map;
@@ -16,7 +19,6 @@ import java.util.Map;
  * @create: 2025-02-15 09:39
  **/
 
-@Slf4j
 public class TcpMessageVideoSender implements TcpMessageSender {
     /**
      * 对象映射器
@@ -26,7 +28,7 @@ public class TcpMessageVideoSender implements TcpMessageSender {
 
     @Override
     public void sendMessageToDevice(DeviceData data, Channel channel) throws JsonProcessingException {
-        log.info("【发往设备】【视频话机】数据为:{}", data);
+        LogUtils.logBusiness("【发往设备】【视频话机】数据为:{}", data);
         // 转换为JSON字符串
         String jsonResponse = objectMapper.writeValueAsString(data.getMsg());
         Map<String, Object> messageMap = (Map<String, Object>) data.getMsg();

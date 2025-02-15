@@ -1,13 +1,13 @@
 package registry;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import mqtt.MqttSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import util.LogUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @AllArgsConstructor
 public class DeviceRegistry {
-    private static final Logger log = LoggerFactory.getLogger(DeviceRegistry.class);
     /**
      * 设备映射表，使用ConcurrentHashMap确保线程安全
      */
@@ -35,7 +34,7 @@ public class DeviceRegistry {
      * @param channel  通道对象
      */
     public void register(String deviceId, Channel channel) {
-        log.info("设备注册{}", deviceId);
+        LogUtils.logBusiness("设备注册{}", deviceId);
         deviceMap.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
         // 注册成功后，向Thingsboard声明设备通过网关上线
@@ -61,7 +60,7 @@ public class DeviceRegistry {
      * @param deviceId 设备ID
      */
     public void unregister(String deviceId) {
-        log.info("设备注销{}", deviceId);
+        LogUtils.logBusiness("设备注销{}", deviceId);
         deviceMap.remove(deviceId);
         // 向Thingsboard声明设备断连
         mqttSender.sendDeviceDisconnected(deviceId);

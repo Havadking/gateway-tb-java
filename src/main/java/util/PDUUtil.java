@@ -1,15 +1,17 @@
 package util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @program: gateway-netty
- * @description: 编解码工具类
+ * @description: 适用于卡尔、掇月普通话机的编解码工具类
  * @author: Havad
  * @create: 2025-02-07 16:47
  **/
-@Slf4j
 public class PDUUtil {
+
     /**
      * 解析PDU字符串(测试用)
      *
@@ -18,7 +20,7 @@ public class PDUUtil {
      */
     public static void parsePDU(String pdu) {
         if (pdu == null || pdu.length() < 15) {
-            log.info("无效的 PDU 数据！");
+            LogUtils.logBusiness("无效的 PDU 数据！");
             return;
         }
 
@@ -31,13 +33,13 @@ public class PDUUtil {
         try {
             length = Integer.parseInt(lengthStr);
         } catch (NumberFormatException e) {
-            log.error("长度字段解析失败：{}", lengthStr);
+            LogUtils.logError("长度字段解析失败：{}", e, lengthStr);
             return;
         }
 
         int expectedTotalLength = length;
         if (pdu.length() != expectedTotalLength) {
-            log.warn("【警告】实际 PDU 长度({})与期望长度({})不符！", pdu.length(), expectedTotalLength);
+            LogUtils.logBusiness("【警告】实际 PDU 长度({})与期望长度({})不符！", pdu.length(), expectedTotalLength);
         }
 
         // 3. 提取 comm_type（1 字符）
@@ -47,7 +49,7 @@ public class PDUUtil {
         try {
             commType = Integer.parseInt(commTypeStr);
         } catch (NumberFormatException e) {
-            log.error("comm_type 字段解析失败：{}", commTypeStr);
+            LogUtils.logError("comm_type 字段解析失败：{}",e , commTypeStr);
             return;
         }
         index += 1;
@@ -62,7 +64,7 @@ public class PDUUtil {
         try {
             seqNo = Integer.parseInt(seqNoStr);
         } catch (NumberFormatException e) {
-            log.error("seq_no 字段解析失败：{}", seqNoStr);
+            LogUtils.logError("seq_no 字段解析失败：{}", e, seqNoStr);
             return;
         }
         index += 4;
@@ -71,7 +73,7 @@ public class PDUUtil {
         // 6. 按照说明，body 长度 = (length 字段值 – 14)
         int bodyLength = length - 14 - 1 - 4;
         if (bodyLength < 0 || index + bodyLength > pdu.length()) {
-            log.error("PDU 数据不完整，无法解析 body 字段！");
+            LogUtils.logError("PDU 数据不完整，无法解析 body 字段！", new Throwable());
             return;
         }
         String body = pdu.substring(index, index + bodyLength);
@@ -79,19 +81,19 @@ public class PDUUtil {
 
         // 7. 提取校验码 check（最后 4 字符）
         if (index + 4 > pdu.length()) {
-            log.error("PDU 数据不完整，无法解析 check 字段！");
+            LogUtils.logError("PDU 数据不完整，无法解析 check 字段！", new Throwable());
             return;
         }
         String check = pdu.substring(index, index + 4);
 
         // 输出各字段
-        log.info("pre: {}", pre);
-        log.info("length: {}", length);
-        log.info("comm_type: {}", commType);
-        log.info("func_no: {}", funcNo);
-        log.info("seq_no: {}", seqNo);
-        log.info("body: {}", body);
-        log.info("check: {}", check);
+        LogUtils.logBusiness("pre: {}", pre);
+        LogUtils.logBusiness("length: {}", length);
+        LogUtils.logBusiness("comm_type: {}", commType);
+        LogUtils.logBusiness("func_no: {}", funcNo);
+        LogUtils.logBusiness("seq_no: {}", seqNo);
+        LogUtils.logBusiness("body: {}", body);
+        LogUtils.logBusiness("check: {}", check);
     }
 
     /**
@@ -149,7 +151,7 @@ public class PDUUtil {
     private static String getBody(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() != length) {
-            log.warn("【警告】实际 PDU 长度({})与 length 字段({})不符！", pdu.length(), length);
+            LogUtils.logBusiness("【警告】实际 PDU 长度({})与 length 字段({})不符！", pdu.length(), length);
         }
         // 计算 body 长度：length - 14 - comm_type(1) - check(4) = length - 19
         int bodyLength = length - 19;
@@ -192,7 +194,7 @@ public class PDUUtil {
      */
     public static boolean validateCheck(String pdu) {
         if (pdu == null || pdu.length() < 15 || !pdu.startsWith("*#F#")) {
-            log.error("无效的 PDU 数据！");
+            LogUtils.logError("无效的 PDU 数据！", new Throwable());
             return false;
         }
 
@@ -208,17 +210,17 @@ public class PDUUtil {
         try {
             checkVal = Integer.parseInt(checkHex, 16);
         } catch (NumberFormatException e) {
-            log.error("check 字段解析失败，非有效16进制：{}", checkHex);
+            LogUtils.logError("check 字段解析失败，非有效16进制：{}", e, checkHex);
             return false;
         }
 
         // 4. 比较 length - 4 与转换后的 check 值是否相等
         int computedValue = length - 4;
         if (computedValue == checkVal) {
-//            log.info("校验成功: length-4 = {} 与 check (10进制) = {} 相等", computedValue, checkVal);
+//            LogUtils.logBusiness("校验成功: length-4 = {} 与 check (10进制) = {} 相等", computedValue, checkVal);
             return true;
         } else {
-            log.error("校验失败: length-4 = {} 不等于 check (10进制) = {}", computedValue, checkVal);
+            LogUtils.logError("校验失败: length-4 = {} 不等于 check (10进制) = {}", new Throwable(), computedValue, checkVal);
             return false;
         }
     }
@@ -232,7 +234,7 @@ public class PDUUtil {
      */
     public static String getDeviceNo(String pdu) {
         if (pdu.length() < 18) {
-            log.error("方法{}, 获取设备编号失败，解析失败的pdu为{}", "getDeviceNo", pdu);
+            LogUtils.logError("方法{}, 获取设备编号失败，解析失败的pdu为{}", new Throwable(), "getDeviceNo", pdu);
         }
         String body = getBody(pdu);
         return body.substring(0, 18).replaceAll("\\s+", "");
@@ -245,12 +247,12 @@ public class PDUUtil {
         String pdu = "*#F#00551100011864603061185738   VER8.43 2024/05/280033";
         String callPUD = "*#F#00661070002864603061185738   17651979715    20250212113310003E";
 //        parsePDU(pdu);
-//        log.info(String.valueOf(getCheck(pdu)));
-//        log.info(getBody(pdu));
-//        log.info(String.valueOf(getFuncNo(pdu)));
-//        log.info(String.valueOf(getLength(pdu)));
+//        LogUtils.logBusiness(String.valueOf(getCheck(pdu)));
+//        LogUtils.logBusiness(getBody(pdu));
+//        LogUtils.logBusiness(String.valueOf(getFuncNo(pdu)));
+//        LogUtils.logBusiness(String.valueOf(getLength(pdu)));
         boolean isValidate = validateCheck(pdu);
-        log.info(String.valueOf(isValidate));
-//        log.info(getDeviceNo(pdu));
+        LogUtils.logBusiness(String.valueOf(isValidate));
+//        LogUtils.logBusiness(getDeviceNo(pdu));
     }
 }
