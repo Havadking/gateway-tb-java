@@ -17,24 +17,36 @@ public class TcpMessageNormalSender implements TcpMessageSender {
     @Override
     public void sendMessageToDevice(DeviceData data, Channel channel) {
         log.info("【发往设备】【普通话机】数据为{}", data);
-        // 普通话机，直接写回去即可，没有具体的字节协议
-        if (channel != null && channel.isActive()) {
-            try {
-                // 从 Channel 的 ByteBufAllocator 分配 ByteBuf
-                ByteBuf buf = channel.alloc().buffer();
-                try {
-                    // 写入数据
-                    buf.writeBytes(data.serializeMsg());
-                    // 写入并刷新 Channel
-                    channel.writeAndFlush(buf);
-                } catch (Exception e) {
-                    // 确保在异常情况下释放 ByteBuf
-                    buf.release();
-                    throw e;
+        if (channel == null || !channel.isActive()) {
+            log.error("【发送失败】通道为空或未激活");
+            return;
+        }
+
+        ByteBuf buf = null;
+        try {
+            // 从 Channel 的 ByteBufAllocator 分配 ByteBuf
+            buf = channel.alloc().buffer();
+
+            // 写入数据
+            byte[] messageBytes = data.serializeMsg();
+            buf.writeBytes(messageBytes);
+
+            // 写入并刷新 Channel
+            channel.writeAndFlush(buf).addListener(future -> {
+                if (future.isSuccess()) {
+                    log.info("【发送成功】消息已发送至设备，数据长度：{} 字节", messageBytes.length);
+                } else {
+                    log.error("【发送失败】消息发送失败", future.cause());
                 }
-            } catch (Exception e) {
-                // 处理异常
-                log.error("Error writing to channel", e);
+            });
+
+            // 发送成功后 ByteBuf 会自动释放，不需要手动释放
+            buf = null;
+
+        } catch (Exception e) {
+            log.error("【发送失败】消息发送过程中发生异常", e);
+            if (buf != null) {
+                buf.release();
             }
         }
     }

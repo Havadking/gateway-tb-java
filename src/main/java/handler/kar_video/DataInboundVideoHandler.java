@@ -37,9 +37,6 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
      */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    //协议类型: link
-    private static final byte[] protocolType = {0x00, 0x00};
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         handleData(ctx, msg);
@@ -59,8 +56,6 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
             request = (Map<String, Object>) messageMap.get("response");
         }
         log.info("request is {}", request);
-        // 获取具体字段
-//        String identity = (String) request.get("Identity");
         if (command.equals("link")) {
             sendSuccessBack(ctx, ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get());
         } else {
@@ -77,6 +72,7 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
      * @param identity 设备标识
      */
     private void sendSuccessBack(ChannelHandlerContext ctx, String identity) {
+        log.info("收到【link】请求，直接进行处理:{}", identity);
         try {
             // 构建响应数据
             Map<String, Object> response = new HashMap<>();
