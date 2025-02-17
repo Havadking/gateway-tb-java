@@ -114,6 +114,18 @@ public class MqttSender {
 
     }
 
+    public void sendAttribute(MqttMessage message) {
+        try {
+            // 发布消息到指定topic
+            mqttClient.publish(GatewayConfig.ATTRIBUTE_TOPIC, message);
+            LogUtils.logBusiness("发送设备属性{}", message);
+        } catch (MqttException e) {
+            LogUtils.logError("发送设备属性 MQTT 消息失败：{}", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
     /**
      * 发送遥测数据到Thingsboard
      *
@@ -130,7 +142,7 @@ public class MqttSender {
                 LogUtils.logBusiness("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                LogUtils.logBusiness("视频话机发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
+                LogUtils.logBusiness("发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
                 // 发送成功，退出循环
                 break;
             } catch (Exception e) {

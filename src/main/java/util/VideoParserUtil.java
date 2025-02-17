@@ -49,7 +49,6 @@ public class VideoParserUtil {
             case "setConfigInfo":
             case "getConfigInfo":
             case "querySIM":
-            case "verifyNum":
                 return "request";
             default:
                 return "response";
@@ -71,7 +70,6 @@ public class VideoParserUtil {
             case "setConfigInfo":
             case "getConfigInfo":
             case "querySIM":
-            case "verifyNum":
                 return "response";
             default:
                 return "request";

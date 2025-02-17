@@ -27,7 +27,6 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
     private static final int HEADER_LENGTH = 20; // 根据实际头部长度调整
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final byte[] SYNC_PREFIX = new byte[]{0x40}; // @ 字符
-    private static final int MAX_PACKAGE_SIZE = 2000;
     private static final short HEARTBEAT_TYPE = 0x0313;
 
     // 存储未完成的多包消息
@@ -54,6 +53,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
         int sessionNumber = in.readInt();          // 会话序号(4字节)
         short totalPackages = in.readShort();      // 协议总包数(2字节)
         short currentPackage = in.readShort();     // 协议包序号(2字节)
+        // 我们目前的协议加密为：未加密
         int keyNumber = in.readInt();              // 密钥序号(4字节)
         short encryptionType = in.readShort();     // 加密类型(2字节)
         short dataLength = in.readShort();         // 数据长度(2字节)
@@ -131,11 +131,11 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
             String command = rootNode.get("command").asText();
             resultMap.put("command", command);
 
-            if ("devstatus".equals(command)) {
-                LogUtils.logBusiness("设备状态作为属性发送");
-                // 处理设备状态 todo
-                return null;
-            }
+//            if ("devstatus".equals(command)) {
+//                LogUtils.logBusiness("设备状态作为属性发送");
+//                // 处理设备状态 todo
+//                return null;
+//            }
 
             // 处理请求或响应
             if (rootNode.has("request")) {

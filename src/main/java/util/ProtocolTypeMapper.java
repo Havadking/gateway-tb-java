@@ -32,7 +32,7 @@ public class ProtocolTypeMapper {
         methodProtocolMap.put("verifyNum", new byte[]{0x23, 0x28}); // 1.1 从亲情号号码池校验手机号
         methodProtocolMap.put("querySIM", new byte[]{0x23, 0x29});    // 1.3 SIM卡套餐余量查询
         methodProtocolMap.put("notice", new byte[]{0x03, 0x30});     // 1.5 推送广告、公告、通知等
-
+        methodProtocolMap.put("getFamilyNumList", new byte[]{0x03, (byte) 0x80});     // 根据卡号获取亲情号码
     }
 
     public static byte[] getProtocolTypeByMethod(String method) {

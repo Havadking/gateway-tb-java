@@ -17,6 +17,7 @@ public class GatewayConfig {
     public static final String TELEMETRY_TOPIC = "v1/gateway/telemetry"; // 发送遥测
     public static final String DISCONNECT_TOPIC = "v1/gateway/disconnect"; // 声明设备断开链接
     public static final String CONNECT_TOPIC = "v1/gateway/connect"; // 声明设备链接
+    public static final String ATTRIBUTE_TOPIC = "v1/gateway/attributes"; // 将属性更新发布到服务器
 
     public static final int DISRUPTOR_BUFFER_SIZE = 1024; // Disruptor 缓冲区大小，根据实际情况调整
 

@@ -9,6 +9,7 @@ import handler.kar_video.DataInboundVideoHandler;
 import handler.kar_video.JsonProtocolDecoder;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.string.StringDecoder;
+import mqtt.MqttSender;
 import registry.DeviceRegistry;
 
 import java.util.ArrayList;
@@ -97,7 +98,7 @@ public class ProtocolHandlerFactory {
      * @param producer       设备数据事件生产者
      * @return 创建的默认协议处理器工厂
      */
-    public static ProtocolHandlerFactory createDefault(DeviceRegistry deviceRegistry, DeviceDataEventProducer producer) {
+    public static ProtocolHandlerFactory createDefault(DeviceRegistry deviceRegistry, DeviceDataEventProducer producer, MqttSender sender) {
         ProtocolHandlerFactory factory = new ProtocolHandlerFactory();
 
         // 注册普通话机的协议的 handler
@@ -107,7 +108,7 @@ public class ProtocolHandlerFactory {
 
         // 注册视频话机的协议的 handler
         factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new AuthenticationVideoHandler(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundVideoHandler(producer));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundVideoHandler(producer, sender));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
 
         return factory;

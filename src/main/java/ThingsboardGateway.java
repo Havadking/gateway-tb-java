@@ -73,7 +73,7 @@ public class ThingsboardGateway {
         mqttReceiver.start();
 
         // 创建 ProtocolHandlerFactory
-        ProtocolHandlerFactory handlerFactory = ProtocolHandlerFactory.createDefault(deviceRegistry, producer);
+        ProtocolHandlerFactory handlerFactory = ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
 
         // 7. Netty
         EventLoopGroup bossGroup = new NioEventLoopGroup();
