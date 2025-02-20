@@ -5,11 +5,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.util.AttributeKey;
 import lombok.AllArgsConstructor;
 import mqtt.MqttSender;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import util.LogUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @program: gateway-netty
@@ -23,8 +22,21 @@ public class DeviceRegistry {
     /**
      * 设备映射表，使用ConcurrentHashMap确保线程安全
      */
-    private final ConcurrentHashMap<String, Channel> deviceMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Channel> tcpChannels = new ConcurrentHashMap<>();
 
+    /**
+     * 使用ConcurrentHashMap存储的HTTP通道集合。
+     * 键为字符串，代表通道的标识；值为Channel对象，代表具体的HTTP通道。
+     */
+    private final ConcurrentHashMap<String, Channel> httpChannels = new ConcurrentHashMap<>();
+
+
+    // 新增：HTTP 连接计数器
+    private final AtomicInteger httpConnectionCount = new AtomicInteger(0);
+
+    /**
+     * MQTT消息发送器
+     */
     private MqttSender mqttSender;
 
     /**
@@ -35,7 +47,7 @@ public class DeviceRegistry {
      */
     public void register(String deviceId, Channel channel) {
         LogUtils.logBusiness("设备注册{}", deviceId);
-        deviceMap.put(deviceId, channel);
+        tcpChannels.put(deviceId, channel);
         channel.attr(AttributeKey.<String>valueOf("deviceId")).set(deviceId);
         // 注册成功后，向Thingsboard声明设备通过网关上线
         mqttSender.sendDeviceConnected(deviceId);
@@ -44,6 +56,26 @@ public class DeviceRegistry {
         channel.closeFuture().addListener((ChannelFutureListener) future -> unregister(deviceId));
     }
 
+
+
+    public void registerHttpChannel(String deviceId, Channel httpChannel) {
+        LogUtils.logBusiness("卡尔视频话机建立 HTTP 连接:{}", deviceId);
+        httpChannels.put(deviceId, httpChannel);
+
+        // 增加 HTTP 连接计数
+        int count = httpConnectionCount.incrementAndGet();
+        LogUtils.logBusiness("当前 HTTP 连接数: {}", count);
+
+        // 添加 ChannelFutureListener 来监听连接关闭事件
+        httpChannel.closeFuture().addListener((ChannelFutureListener) future -> unregisterHttp(deviceId));
+    }
+
+
+    public Channel getHttpChannel(String deviceId) {
+        return httpChannels.get(deviceId);
+    }
+
+
     /**
      * 根据设备ID获取对应的通道。
      *
@@ -51,7 +83,7 @@ public class DeviceRegistry {
      * @return 对应的通道对象，如果不存在则返回null
      */
     public Channel getChannel(String deviceId) {
-        return deviceMap.get(deviceId);
+        return tcpChannels.get(deviceId);
     }
 
     /**
@@ -61,9 +93,30 @@ public class DeviceRegistry {
      */
     public void unregister(String deviceId) {
         LogUtils.logBusiness("设备注销{}", deviceId);
-        deviceMap.remove(deviceId);
+        // 移除所有 TCP 和 HTTP 连接
+        Channel tcpChannel = tcpChannels.remove(deviceId);
+        if (tcpChannel != null) {
+            tcpChannel.close();
+        }
+
+        Channel httpChannel = httpChannels.remove(deviceId);
+        if (httpChannel != null) {
+            httpChannel.close();
+        }
         // 向Thingsboard声明设备断连
         mqttSender.sendDeviceDisconnected(deviceId);
+    }
+
+    public void unregisterHttp(String deviceId) {
+        LogUtils.logBusiness("设备Http链接关闭{}", deviceId);
+        Channel httpChannel = httpChannels.remove(deviceId);
+        // 减少 HTTP 连接计数
+        int count = httpConnectionCount.decrementAndGet();
+        LogUtils.logBusiness("当前 HTTP 连接数: {}", count);
+
+        if (httpChannel != null) {
+            httpChannel.close();
+        }
     }
 
 }

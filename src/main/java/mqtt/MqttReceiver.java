@@ -6,25 +6,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import config.GatewayConfig;
 import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
 import mqtt.parser.MqttMessageParser;
 import mqtt.parser.MqttMessageParserFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.ProtocolIdentifier;
+import task.Task;
+import task.TaskManager;
 import util.LogUtils;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static util.VideoParserUtil.imageUrlToBase64;
 
 /**
  * @program: gateway-netty
@@ -43,6 +47,9 @@ public class MqttReceiver implements MqttCallback {
      * MQTT客户端实例。
      */
     private final MqttClient mqttClient;
+
+
+    private final TaskManager taskManager;
 
     /**
      * 定时任务执行器，使用单线程的ScheduledExecutorService实现。
@@ -63,9 +70,10 @@ public class MqttReceiver implements MqttCallback {
      */
     private volatile boolean isReconnecting = false;
 
-    public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient, MqttMessageParserFactory parserFactory) {
+    public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient, TaskManager taskManager, MqttMessageParserFactory parserFactory) {
         this.producer = producer;
         this.mqttClient = mqttClient;
+        this.taskManager = taskManager;
         this.mqttClient.setCallback(this); // 设置回调
         this.parserFactory = parserFactory;
     }
@@ -151,6 +159,7 @@ public class MqttReceiver implements MqttCallback {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(messageContent);
         String device = rootNode.get("device").asText();
+        JsonNode dataNode = rootNode.get("data");
         String method = rootNode.get("data").get("method").asText();
         int id = rootNode.get("data").get("id").asInt();
         // 1. 根据 Topic 或消息内容确定协议类型
@@ -158,6 +167,39 @@ public class MqttReceiver implements MqttCallback {
         if (protocolType == null) {
             // 不处理
             LogUtils.logBusiness("【{}】种类信息暂时不处理", method);
+            return;
+        } else if (protocolType.equals(ProtocolIdentifier.PROTOCOL_VIDEO_FACE)) {
+            LogUtils.logBusiness("视频话机白名单处理");
+            JsonNode paramsNode = dataNode.get("params");
+            String taskId = paramsNode.get("taskId").asText();
+            JsonNode bodyNode = paramsNode.get("body");
+            List<Map<String, Object>> personList = new ArrayList<>();
+            if (bodyNode.isArray()) {
+                for (JsonNode personNode : bodyNode) {
+                    Map<String, Object> personMap = new HashMap<>();
+                    int operType = personNode.get("operType").asInt();
+                    if (operType == 1) {
+                        LogUtils.logBusiness("下发人脸");
+                        personMap.put("operType", operType);
+                        personMap.put("id", personNode.get("id").asText());
+                        personMap.put("number", personNode.get("number").asText());
+                        personMap.put("depName", personNode.get("depName").asText());
+                        personMap.put("userType", personNode.get("userType").asInt());
+                        personMap.put("name", personNode.get("name").asText());
+                        personMap.put("cardNo", personNode.get("cardNo").asText());
+                        String base64 = imageUrlToBase64( personNode.get("imageUrl").asText());
+                        personMap.put("picture", base64);
+                    } else {
+                        LogUtils.logBusiness("删除人脸");
+                        personMap.put("operType", operType);
+                        personMap.put("id", personNode.get("id").asText());
+                    }
+                    personList.add(personMap);
+                }
+            }
+            Task task = new Task(taskId, device, personList);
+            taskManager.addTask(device, task);
+            LogUtils.logBusiness("Added task {} for device {}", taskId, device);
             return;
         }
 
@@ -173,13 +215,20 @@ public class MqttReceiver implements MqttCallback {
     }
 
     private ProtocolIdentifier determineProtocolType(String method) {
-        if (method.equals("send_msg")) {
-            // 普通话机
-            LogUtils.logBusiness("普通话机下发数据");
-            return ProtocolIdentifier.PROTOCOL_NORMAL;
-        } else if (Objects.equals(method, "tcp_rpc")) {
-            LogUtils.logBusiness("视频话机下发数据");
-            return ProtocolIdentifier.PROTOCOL_VIDEO;
+        switch (method) {
+            case "send_msg":
+                // 普通话机
+                LogUtils.logBusiness("普通话机下发数据");
+                return ProtocolIdentifier.PROTOCOL_NORMAL;
+            case "tcp_rpc":
+                // 视频话机基本
+                LogUtils.logBusiness("视频话机下发数据");
+                return ProtocolIdentifier.PROTOCOL_VIDEO;
+            case "add person":
+            case "del person":
+                // 视频话机人脸
+                LogUtils.logBusiness("视频话机人脸操作");
+                return ProtocolIdentifier.PROTOCOL_VIDEO_FACE;
         }
         return null;
     }

@@ -36,3 +36,6 @@ build/
 
 ### LOG ###
 logs/*
+
+### TEST ###
+/src/main/java/test/*

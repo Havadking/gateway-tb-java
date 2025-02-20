@@ -6,8 +6,6 @@ import lombok.AllArgsConstructor;
 import mqtt.MqttSender;
 import mqtt.builder.MqttMessageBuilder;
 import mqtt.builder.MqttMessageBuilderFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.sender.TcpMessageSender;
 import protocol.sender.TcpMessageSenderFactory;

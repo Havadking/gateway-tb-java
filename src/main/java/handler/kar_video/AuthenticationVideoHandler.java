@@ -1,6 +1,7 @@
 package handler.kar_video;
 
 import handler.AuthenticationHandler;
+import http.HttpServer;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
@@ -58,6 +59,7 @@ public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter imp
                 LogUtils.logBusiness("卡尔视频话机认证成功：{}", identity);
                 deviceRegistry.register(identity, ctx.channel());
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(identity);
+
                 //将消息传递到下一个Inbound
                 ctx.fireChannelRead(msg);
                 // 移除自身,避免多次认证

@@ -7,6 +7,7 @@ import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventHandler;
 import disruptor.DeviceDataEventProducer;
 import handler.ProtocolDetectionHandler;
+import http.HttpServer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,18 +15,16 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import lombok.extern.slf4j.Slf4j;
 import mqtt.MqttConnection;
 import mqtt.MqttReceiver;
 import mqtt.MqttSender;
 import mqtt.builder.MqttMessageBuilderFactory;
 import mqtt.parser.MqttMessageParserFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import protocol.ProtocolHandlerFactory;
 import protocol.sender.TcpMessageSenderFactory;
 import registry.DeviceRegistry;
+import task.TaskManager;
 import util.LogUtils;
 
 /**
@@ -57,7 +56,8 @@ public class ThingsboardGateway {
         DeviceDataEventProducer producer = new DeviceDataEventProducer(
                 disruptor.getRingBuffer()
         );
-        MqttReceiver mqttReceiver = new MqttReceiver(producer, mqttClient, parserFactory);
+        TaskManager taskManager = new TaskManager();
+        MqttReceiver mqttReceiver = new MqttReceiver(producer, mqttClient, taskManager, parserFactory);
 
         // 4. 连接 Disruptor 的 Handler
         MqttMessageBuilderFactory builderFactory = MqttMessageBuilderFactory.createDefault();
@@ -72,10 +72,15 @@ public class ThingsboardGateway {
         // 6. 启动 MQTT 接收器
         mqttReceiver.start();
 
-        // 创建 ProtocolHandlerFactory
+        // 7. 创建 ProtocolHandlerFactory
         ProtocolHandlerFactory handlerFactory = ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
 
-        // 7. Netty
+        // 8. 启动卡尔视频话机的 HTTP 服务器
+        HttpServer server = new HttpServer(deviceRegistry, taskManager, producer);
+        server.start();
+
+
+        // 9. Netty
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

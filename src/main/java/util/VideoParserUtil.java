@@ -9,8 +9,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @program: gateway-netty
@@ -33,6 +48,46 @@ public class VideoParserUtil {
             AttributeKey.valueOf("SESSION_COUNTER");
 
 
+    public static String imageUrlToBase64(String imageUrl) throws IOException {
+        // 如果是https链接，禁用SSL证书验证
+        if (imageUrl.toLowerCase().startsWith("https")) {
+            try {
+                // 创建信任所有证书的信任管理器
+                TrustManager[] trustAllCertificates = new TrustManager[] {
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() { return null; }
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                        }
+                };
+
+                // 安装信任管理器
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCertificates, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new IOException("配置SSL失败: " + e.getMessage(), e);
+            }
+        }
+
+        // 读取图片数据
+        URL url = new URL(imageUrl);
+        try (InputStream inputStream = url.openStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            // 转换为Base64编码
+            byte[] imageBytes = outputStream.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        }
+    }
 
     /**
      * 根据命令获取消息类型

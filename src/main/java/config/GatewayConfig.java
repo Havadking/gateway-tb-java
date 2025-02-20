@@ -9,6 +9,8 @@ package config;
 
 public class GatewayConfig {
     public static final int PORT = 5566; // 网关对外提供的端口号
+    public static final int HTTP_PORT = 12000; // 用于视频话机进行人脸传输
+    public static final int FILE_PORT = 12001; // 用于视频话机进行文件下发
 
     public static final String MQTT_BROKER_URL = "tcp://192.168.9.230:1883"; // 正式thingsboard服务地址
     public static final String MQTT_CLIENT_ID = "TestClient"; // 可以是随机，不重要，不影响
