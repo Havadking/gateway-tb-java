@@ -3,8 +3,6 @@ package disruptor;
 import com.lmax.disruptor.RingBuffer;
 import lombok.AllArgsConstructor;
 import model.DeviceData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import util.LogUtils;
 
 /**
@@ -16,7 +14,10 @@ import util.LogUtils;
 
 @AllArgsConstructor
 public class DeviceDataEventProducer {
-    public final RingBuffer<DeviceDataEvent> ringBuffer;
+    /**
+     * 环形缓冲区，用于存储设备数据事件
+     */
+    private final RingBuffer<DeviceDataEvent> ringBuffer;
 
     /**
      * 处理设备数据事件。

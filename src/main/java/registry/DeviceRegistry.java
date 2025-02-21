@@ -31,7 +31,9 @@ public class DeviceRegistry {
     private final ConcurrentHashMap<String, Channel> httpChannels = new ConcurrentHashMap<>();
 
 
-    // 新增：HTTP 连接计数器
+    /**
+     * HTTP连接计数器
+     */
     private final AtomicInteger httpConnectionCount = new AtomicInteger(0);
 
     /**
@@ -57,7 +59,12 @@ public class DeviceRegistry {
     }
 
 
-
+    /**
+     * 注册HTTP通道。
+     *
+     * @param deviceId    设备ID
+     * @param httpChannel HTTP通道
+     */
     public void registerHttpChannel(String deviceId, Channel httpChannel) {
         LogUtils.logBusiness("卡尔视频话机建立 HTTP 连接:{}", deviceId);
         httpChannels.put(deviceId, httpChannel);
@@ -68,11 +75,6 @@ public class DeviceRegistry {
 
         // 添加 ChannelFutureListener 来监听连接关闭事件
         httpChannel.closeFuture().addListener((ChannelFutureListener) future -> unregisterHttp(deviceId));
-    }
-
-
-    public Channel getHttpChannel(String deviceId) {
-        return httpChannels.get(deviceId);
     }
 
 
@@ -107,6 +109,11 @@ public class DeviceRegistry {
         mqttSender.sendDeviceDisconnected(deviceId);
     }
 
+    /**
+     * 注销设备的HTTP连接
+     *
+     * @param deviceId 设备ID标识
+     */
     public void unregisterHttp(String deviceId) {
         LogUtils.logBusiness("设备Http链接关闭{}", deviceId);
         Channel httpChannel = httpChannels.remove(deviceId);

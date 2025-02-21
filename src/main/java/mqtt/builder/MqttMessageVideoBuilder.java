@@ -1,10 +1,7 @@
 package mqtt.builder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import util.LogUtils;
 import util.VideoParserUtil;
@@ -22,7 +19,7 @@ import java.util.Map;
  * @create: 2025-02-14 15:23
  **/
 
-public class MqttMessageVideoBuilder implements MqttMessageBuilder{
+public class MqttMessageVideoBuilder implements MqttMessageBuilder {
 
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {

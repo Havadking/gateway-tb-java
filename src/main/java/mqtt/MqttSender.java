@@ -23,7 +23,13 @@ import java.util.Random;
 
 @AllArgsConstructor
 public class MqttSender {
+    /**
+     * MQTT客户端实例。
+     */
     private final MqttClient mqttClient;
+    /**
+     * 随机数生成器实例。
+     */
     private static final Random RANDOM = new Random();
 
 
@@ -114,6 +120,12 @@ public class MqttSender {
 
     }
 
+    /**
+     * 发送Mqtt消息属性。
+     *
+     * @param message 要发送的Mqtt消息对象
+     * @throws RuntimeException 当发送Mqtt消息失败时抛出运行时异常
+     */
     public void sendAttribute(MqttMessage message) {
         try {
             // 发布消息到指定topic
@@ -132,6 +144,7 @@ public class MqttSender {
      * @param message MQTT消息对象，包含设备遥测数据
      * @throws MqttException 当通过MQTT发送消息遇到问题时抛出
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public void sendToThingsboard(MqttMessage message) throws MqttException {
         int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
         int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
@@ -142,7 +155,7 @@ public class MqttSender {
                 LogUtils.logBusiness("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
                 // 发布消息
                 mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                LogUtils.logBusiness("发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry+1);
+                LogUtils.logBusiness("发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry + 1);
                 // 发送成功，退出循环
                 break;
             } catch (Exception e) {

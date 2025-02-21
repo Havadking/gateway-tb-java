@@ -19,7 +19,7 @@ import java.util.Map;
  * @create: 2025-02-20 15:30
  **/
 
-public class MqttMessageVideoFaceBuilder implements MqttMessageBuilder{
+public class MqttMessageVideoFaceBuilder implements MqttMessageBuilder {
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {
         // 创建 JSON 对象
@@ -32,13 +32,12 @@ public class MqttMessageVideoFaceBuilder implements MqttMessageBuilder{
         String jsonString = (String) deviceData.getMsg();
         String deviceNo = deviceData.getDeviceId();
 
-        // Parse the JSON string into a Map
-        Map<String, Object> dataMap = objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
+        // 将 JSON 字符串提取成正常 JSON
+        Map<String, Object> dataMap = objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {
+        });
 
-        // Convert the Map to a JsonNode
         JsonNode dataNode = objectMapper.valueToTree(dataMap);
 
-        // Add to the message structure
         nameObject.set("/karface/cp/yf/heart.admin", dataNode);
 
         nameArray.add(nameObject);

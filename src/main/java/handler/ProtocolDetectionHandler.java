@@ -8,8 +8,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.AllArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import protocol.ProtocolHandlerFactory;
 import protocol.ProtocolIdentifier;
 import util.LogUtils;
@@ -25,9 +23,18 @@ import java.util.List;
 
 @AllArgsConstructor
 public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
+    /**
+     * 第一种协议的头标识字符
+     */
     private static final byte PROTOCOL_A_HEADER = '*';  // 第一种协议以 '*' 开头
+    /**
+     * 第二种协议的头标识字符，固定为 '@'。
+     */
     private static final byte PROTOCOL_B_HEADER = '@';  // 第二种协议以 '@' 开头
 
+    /**
+     * 协议处理器工厂
+     */
     private final ProtocolHandlerFactory handlerFactory;
 
     @Override
@@ -57,10 +64,10 @@ public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
 
         // 4. 将 Handler 添加到 Pipeline
         ctx.pipeline().addLast(handlerFactory.getDecoder(protocolId));
-        ctx.pipeline().addLast((ChannelHandlerAdapter)authHandler);
+        ctx.pipeline().addLast((ChannelHandlerAdapter) authHandler);
         ctx.pipeline().addLast(idleStateHandler);
         ctx.pipeline().addLast(idleDisconnectHandler);
-        ctx.pipeline().addLast((ChannelHandlerAdapter)dataHandler);
+        ctx.pipeline().addLast((ChannelHandlerAdapter) dataHandler);
 
         // 5. 移除自身
         ctx.pipeline().remove(this);

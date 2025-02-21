@@ -1,15 +1,12 @@
 package util;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  * @program: gateway-netty
  * @description: 适用于卡尔、掇月普通话机的编解码工具类
  * @author: Havad
  * @create: 2025-02-07 16:47
  **/
+@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class PDUUtil {
 
     /**
@@ -18,6 +15,7 @@ public class PDUUtil {
      * @param pdu 需要解析的PDU字符串
      * @throws IllegalArgumentException 当PDU字符串为空或长度小于15时抛出异常
      */
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:MagicNumber"})
     public static void parsePDU(String pdu) {
         if (pdu == null || pdu.length() < 15) {
             LogUtils.logBusiness("无效的 PDU 数据！");
@@ -49,7 +47,7 @@ public class PDUUtil {
         try {
             commType = Integer.parseInt(commTypeStr);
         } catch (NumberFormatException e) {
-            LogUtils.logError("comm_type 字段解析失败：{}",e , commTypeStr);
+            LogUtils.logError("comm_type 字段解析失败：{}", e, commTypeStr);
             return;
         }
         index += 1;
@@ -103,6 +101,7 @@ public class PDUUtil {
      * @return length 字段对应的整数值
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 length 字段时抛出异常
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static int getLength(String pdu) {
         if (pdu == null || pdu.length() < 8) {
             throw new IllegalArgumentException("PDU 数据无效或长度不足以获取 length 字段！");
@@ -122,6 +121,7 @@ public class PDUUtil {
      * @return func_no 字段对应的字符串（2 个字符）
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 func_no 字段时抛出异常
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static int getFuncNo(String pdu) {
         // func_no 固定位于索引 9 到 11（2 个字符）
         if (pdu == null || pdu.length() < 11) {
@@ -148,6 +148,7 @@ public class PDUUtil {
      * @return body 字段对应的字符串
      * @throws IllegalArgumentException 当 PDU 数据无效或无法获取完整 body 字段时抛出异常
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static String getBody(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() != length) {
@@ -176,6 +177,7 @@ public class PDUUtil {
      * @return check 字段对应的字符串（4 个字符）
      * @throws IllegalArgumentException 当 PDU 数据无效或长度不足以获取 check 字段时抛出异常
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static String getCheck(String pdu) {
         int length = getLength(pdu);
         if (pdu.length() < 4 || length < 4) {
@@ -192,6 +194,7 @@ public class PDUUtil {
      * @param pdu PDU 数据字符串
      * @return 校验成功返回 true，否则返回 false
      */
+    @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:ReturnCount"})
     public static boolean validateCheck(String pdu) {
         if (pdu == null || pdu.length() < 15 || !pdu.startsWith("*#F#")) {
             LogUtils.logError("无效的 PDU 数据！", new Throwable());
@@ -232,6 +235,7 @@ public class PDUUtil {
      * @param pdu PDU字符串
      * @return 获取到的设备编号，若PDU长度小于18或处理失败，可能返回空字符串
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static String getDeviceNo(String pdu) {
         if (pdu.length() < 18) {
             LogUtils.logError("方法{}, 获取设备编号失败，解析失败的pdu为{}", new Throwable(), "getDeviceNo", pdu);

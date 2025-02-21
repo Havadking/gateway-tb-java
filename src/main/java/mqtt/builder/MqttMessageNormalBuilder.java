@@ -3,10 +3,7 @@ package mqtt.builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import util.LogUtils;
 import util.PDUUtil;
@@ -22,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 
 public class MqttMessageNormalBuilder implements MqttMessageBuilder {
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public MqttMessage buildMessage(DeviceData deviceData) throws Exception {
         // 创建 JSON 对象
@@ -31,9 +29,9 @@ public class MqttMessageNormalBuilder implements MqttMessageBuilder {
         ObjectNode nameObject = objectMapper.createObjectNode();
 
         // 获取相关参数
-        String PDU = (String) deviceData.getMsg();
-        String deviceNo = PDUUtil.getDeviceNo(PDU);
-        String data = PDU.substring(4);
+        String pdu = (String) deviceData.getMsg();
+        String deviceNo = PDUUtil.getDeviceNo(pdu);
+        String data = pdu.substring(4);
 
         nameObject.put("INFO", data);
         nameArray.add(nameObject);

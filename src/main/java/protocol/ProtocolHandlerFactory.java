@@ -92,23 +92,29 @@ public class ProtocolHandlerFactory {
     }
 
     /**
-     * 创建默认的协议处理器工厂
+     * 创建默认的协议处理器工厂。
      *
      * @param deviceRegistry 设备注册中心
      * @param producer       设备数据事件生产者
-     * @return 创建的默认协议处理器工厂
+     * @param sender         MQTT消息发送者
+     * @return 创建的默认协议处理器工厂实例
      */
-    public static ProtocolHandlerFactory createDefault(DeviceRegistry deviceRegistry, DeviceDataEventProducer producer, MqttSender sender) {
+    public static ProtocolHandlerFactory createDefault(DeviceRegistry deviceRegistry,
+                                                       DeviceDataEventProducer producer, MqttSender sender) {
         ProtocolHandlerFactory factory = new ProtocolHandlerFactory();
 
         // 注册普通话机的协议的 handler
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new AuthenticationNormalHandler(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL, () -> new DataInboundNormalHandler(producer));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL,
+                () -> new AuthenticationNormalHandler(deviceRegistry));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_NORMAL,
+                () -> new DataInboundNormalHandler(producer));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_NORMAL, StringDecoder::new);
 
         // 注册视频话机的协议的 handler
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new AuthenticationVideoHandler(deviceRegistry));
-        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO, () -> new DataInboundVideoHandler(producer, sender));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
+                () -> new AuthenticationVideoHandler(deviceRegistry));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
+                () -> new DataInboundVideoHandler(producer, sender));
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
 
         return factory;

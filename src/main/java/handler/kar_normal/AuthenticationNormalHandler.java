@@ -4,8 +4,6 @@ import handler.AuthenticationHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import registry.DeviceRegistry;
 import util.AuthDeviceUtil;
 import util.LogUtils;
@@ -20,7 +18,10 @@ import util.PDUUtil;
 
 public class AuthenticationNormalHandler extends ChannelInboundHandlerAdapter implements AuthenticationHandler {
 
-    public final DeviceRegistry deviceRegistry;
+    /**
+     * 设备注册信息
+     */
+    private final DeviceRegistry deviceRegistry;
 
     public AuthenticationNormalHandler(DeviceRegistry deviceRegistry) {
         this.deviceRegistry = deviceRegistry;

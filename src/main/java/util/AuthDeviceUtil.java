@@ -11,9 +11,6 @@ import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -23,6 +20,7 @@ import org.apache.logging.log4j.Logger;
  * @create: 2025-02-07 11:11
  **/
 
+@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class AuthDeviceUtil {
 
     /**
@@ -57,6 +55,7 @@ public class AuthDeviceUtil {
      * @return 对应设备编号的数据流
      * @throws IOException 当创建连接或获取输入流失败时抛出
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static InputStream getStream(String deviceNo) throws IOException {
         String urlString = "https://rest.xxt.cn/hardware-business/receive/device-auth?deviceNo=" + deviceNo;
         URL url = new URL(urlString);
@@ -114,6 +113,7 @@ public class AuthDeviceUtil {
      * @return 连接的响应内容字符串
      * @throws IOException 当读取响应内容时发生I/O错误
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static String getResponse(HttpURLConnection connection) throws IOException {
         int responseCode = connection.getResponseCode();
         InputStream is = (responseCode >= 200 && responseCode < 300)
@@ -127,17 +127,4 @@ public class AuthDeviceUtil {
         }
         return responseBuilder.toString();
     }
-
-    public static void main(String[] args) {
-        try {
-            String deviceNo = "863564051656495";
-            boolean content = getDeviceAuth(deviceNo);
-            System.out.println("Content: " + content);
-        } catch (Exception e) {
-            LogUtils.logError("调用出现错误:{}", e,e.getMessage());
-        }
-    }
-
-
-
 }

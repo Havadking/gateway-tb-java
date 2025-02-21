@@ -11,5 +11,12 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  **/
 
 public interface MqttMessageBuilder {
+    /**
+     * 构建MQTT消息的方法
+     *
+     * @param deviceData 设备数据对象
+     * @return 构建好的MQTT消息对象
+     * @throws Exception 当构建消息过程中发生错误时抛出异常
+     */
     MqttMessage buildMessage(DeviceData deviceData) throws Exception;
 }

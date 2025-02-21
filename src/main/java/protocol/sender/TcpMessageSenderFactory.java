@@ -1,10 +1,6 @@
 package protocol.sender;
 
 import exceptions.UnsupportedProtocolException;
-import mqtt.parser.MqttMessageParser;
-import mqtt.parser.MqttMessageParserFactory;
-import mqtt.parser.MqttNormalMessageParser;
-import mqtt.parser.MqttVideoMessageParser;
 import protocol.ProtocolIdentifier;
 
 import java.util.HashMap;

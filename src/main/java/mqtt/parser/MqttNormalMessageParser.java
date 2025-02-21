@@ -2,10 +2,7 @@ package mqtt.parser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import protocol.ProtocolIdentifier;
 import util.LogUtils;
@@ -17,7 +14,7 @@ import util.LogUtils;
  * @create: 2025-02-14 11:17
  **/
 
-public class MqttNormalMessageParser implements MqttMessageParser{
+public class MqttNormalMessageParser implements MqttMessageParser {
 
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {

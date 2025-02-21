@@ -27,20 +27,47 @@ import util.LogUtils;
  **/
 
 public class HttpServer {
+    /**
+     * 设备注册信息
+     */
     private final DeviceRegistry deviceRegistry;
+    /**
+     * 主事件循环组
+     */
     private EventLoopGroup bossGroup;
+    /**
+     * 工作线程事件循环组
+     */
     private EventLoopGroup workerGroup;
+    /**
+     * 通道
+     */
     private Channel channel;
+    /**
+     * 任务管理器
+     */
     private final TaskManager taskManager;
+    /**
+     * 设备数据事件生产者
+     */
     private final DeviceDataEventProducer producer;
 
-    public HttpServer(DeviceRegistry deviceRegistry,TaskManager taskManager, DeviceDataEventProducer producer) {
+    public HttpServer(DeviceRegistry deviceRegistry, TaskManager taskManager, DeviceDataEventProducer producer) {
         this.deviceRegistry = deviceRegistry;
         this.taskManager = taskManager;
         this.producer = producer;
     }
 
 
+    /**
+     * 启动服务器方法。
+     * <p>
+     * 该方法负责初始化服务器，绑定端口并启动接受进来的连接。
+     * 使用NIO传输和指定的Channel初始化ServerBootstrap。
+     *
+     * @throws Exception 如果在启动过程中发生错误，将抛出异常
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public void start() throws Exception {
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup();
@@ -51,7 +78,7 @@ public class HttpServer {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
+                        public void initChannel(SocketChannel ch) {
                             ch.pipeline().addLast(
                                     new HttpServerCodec(),
                                     new HttpObjectAggregator(65536),
@@ -68,13 +95,23 @@ public class HttpServer {
             channel = f.channel();
 //            f.channel().closeFuture().sync();
 
-        } catch (Exception e){
+        } catch (Exception e) {
             // Exception here
             stop();
             throw e;
         }
     }
 
+    /**
+     * 停止服务方法
+     * <p>
+     * 此方法负责关闭通道、线程组，并释放相关资源。
+     *
+     * @see #channel
+     * @see #bossGroup
+     * @see #workerGroup
+     * @see RedisConfig#closePool()
+     */
     public void stop() {
         if (channel != null) {
             channel.close();
@@ -86,6 +123,7 @@ public class HttpServer {
             workerGroup.shutdownGracefully();
         }
 
+        taskManager.shutdown();
         RedisConfig.closePool();
         LogUtils.logBusiness("HTTP Server stopped.");
     }

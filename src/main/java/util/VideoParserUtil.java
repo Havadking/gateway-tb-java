@@ -3,17 +3,12 @@ package util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +20,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * @program: gateway-netty
@@ -34,20 +28,44 @@ import javax.net.ssl.X509TrustManager;
  * @create: 2025-02-14 17:26
  **/
 
+@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class VideoParserUtil {
-    //同步标识
-    private static final byte asyncIdentityPrefix = 0x40;
-    private static final byte asyncIdentitySuffix = 0x47;  // 根据设备类型，如 'G' 对应 0x47
-    //协议加密类型
-    private static final byte[] encryptionType = {0x27, 0x10};
-    private static final byte[] keyIndex = {0x00, 0x00, 0x00, 0x00};
+    /**
+     * 同步标识的前缀字节
+     *///同步标识
+    private static final byte ASYNC_IDENTITY_PREFIX = 0x40;
+    /**
+     * 异步标识后缀，对应设备类型字符 'G' 的十六进制值
+     */
+    private static final byte ASYNC_IDENTITY_SUFFIX = 0x47;  // 根据设备类型，如 'G' 对应 0x47
+    /**
+     * 协议加密类型
+     *///协议加密类型
+    private static final byte[] ENCRYPTION_TYPE = {0x27, 0x10};
+    /**
+     * 密钥索引
+     */
+    private static final byte[] KEY_INDEX = {0x00, 0x00, 0x00, 0x00};
+    /**
+     * 最大数据包大小限制。
+     */
     private static final int MAX_PACKET_SIZE = 2000;
-    // 会话序号 (从0开始，每个连接递增)
+    /**
+     * 会话序号属性键，用于存储从0开始递增的会话计数器
+     */// 会话序号 (从0开始，每个连接递增)
     // 定义一个AttributeKey来存储会话计数器
     private static final AttributeKey<AtomicInteger> SESSION_COUNTER =
             AttributeKey.valueOf("SESSION_COUNTER");
 
 
+    /**
+     * 将图片URL转换为Base64编码的字符串
+     *
+     * @param imageUrl 图片的URL地址
+     * @return 图片内容的Base64编码
+     * @throws IOException 当读取图片数据或配置SSL时发生错误
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static String imageUrlToBase64(String imageUrl) throws IOException {
         // 如果是https链接，禁用SSL证书验证
         if (imageUrl.toLowerCase().startsWith("https")) {
@@ -55,9 +73,11 @@ public class VideoParserUtil {
                 // 创建信任所有证书的信任管理器
                 TrustManager[] trustAllCertificates = new TrustManager[] {
                         new X509TrustManager() {
-                            public X509Certificate[] getAcceptedIssuers() { return null; }
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                            public X509Certificate[] getAcceptedIssuers() {
+                                return null;
+                            }
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) { }
                         }
                 };
 
@@ -146,7 +166,11 @@ public class VideoParserUtil {
     }
 
     /**
-     * 发送数据 (可能需要分包)
+     * 发送数据方法，支持大数据分包传输。
+     *
+     * @param channel  通道对象，用于发送数据
+     * @param method   请求的方法名
+     * @param jsonData 需要发送的JSON格式数据
      */
     public static void sendData(Channel channel, String method, String jsonData) {
         byte[] jsonBytes = jsonData.getBytes(StandardCharsets.UTF_8);
@@ -174,7 +198,8 @@ public class VideoParserUtil {
                         if (future.isSuccess()) {
                             LogUtils.logBusiness("数据包发送成功 (包序号: {}/{})", finalI + 1, totalPackets);
                         } else {
-                            LogUtils.logError("数据包发送失败 (包序号: {}/{})", new Throwable(), finalI + 1, totalPackets, future.cause());
+                            LogUtils.logError("数据包发送失败 (包序号: {}/{})",
+                                    new Throwable(), finalI + 1, totalPackets, future.cause());
                         }
                     });
         }
@@ -190,13 +215,14 @@ public class VideoParserUtil {
      * @param data         数据内容
      * @return 构建好的数据包 ByteBuf 对象
      */
-    private static ByteBuf buildPacket(byte[] protocolType, int sessionIndex, int totalPackets, int packetIndex, byte[] data) {
+    private static ByteBuf buildPacket(
+            byte[] protocolType, int sessionIndex, int totalPackets, int packetIndex, byte[] data) {
 
         ByteBuf buffer = Unpooled.buffer();
 
         // 0. 同步标识
-        buffer.writeByte(asyncIdentityPrefix);
-        buffer.writeByte(asyncIdentitySuffix); // 0x47 (话机，'G')
+        buffer.writeByte(ASYNC_IDENTITY_PREFIX);
+        buffer.writeByte(ASYNC_IDENTITY_SUFFIX); // 0x47 (话机，'G')
 
         // 2. 协议类型
         buffer.writeBytes(protocolType); // {0x00, 0x00} (link)
@@ -211,10 +237,10 @@ public class VideoParserUtil {
         buffer.writeBytes(shortToBytesBigEndian((short) packetIndex));
 
         // 12. 秘钥序号
-        buffer.writeBytes(keyIndex);
+        buffer.writeBytes(KEY_INDEX);
 
         // 16. 协议加密类型
-        buffer.writeBytes(encryptionType); // {0x27, 0x10}
+        buffer.writeBytes(ENCRYPTION_TYPE); // {0x27, 0x10}
 
         // 18. 加密数据长度
         buffer.writeBytes(shortToBytesBigEndian((short) data.length));
@@ -231,6 +257,7 @@ public class VideoParserUtil {
      * @param value 需要转换的int值
      * @return 转换后的字节序列数组
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static byte[] intToBytesBigEndian(int value) {
         return new byte[]{
                 (byte) ((value >>> 24) & 0xFF),
@@ -246,6 +273,7 @@ public class VideoParserUtil {
      * @param value 需要转换的短整型值
      * @return 转换后的字节数组
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static byte[] shortToBytesBigEndian(short value) {
         return new byte[]{
                 (byte) ((value >>> 8) & 0xFF),

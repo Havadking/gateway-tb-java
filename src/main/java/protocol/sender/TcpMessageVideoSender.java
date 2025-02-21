@@ -3,10 +3,7 @@ package protocol.sender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.Channel;
-import lombok.extern.slf4j.Slf4j;
 import model.DeviceData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import util.LogUtils;
 import util.VideoParserUtil;
 

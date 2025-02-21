@@ -24,14 +24,26 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 
 public class JsonProtocolDecoder extends ByteToMessageDecoder {
+    /**
+     * 头部长度，固定值为20，根据实际头部长度进行调整。
+     */
     private static final int HEADER_LENGTH = 20; // 根据实际头部长度调整
     private final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * 同步前缀字节数组，用于标识消息的开始，默认为 0x40（即 '@' 字符）
+     */
     private static final byte[] SYNC_PREFIX = new byte[]{0x40}; // @ 字符
+    /**
+     * 心跳消息类型标识。
+     */
     private static final short HEARTBEAT_TYPE = 0x0313;
 
-    // 存储未完成的多包消息
+    /**
+     * 存储未完成的多包消息映射
+     */// 存储未完成的多包消息
     private final Map<Integer, PackageAssembler> messageAssemblers = new ConcurrentHashMap<>();
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (in.readableBytes() < HEADER_LENGTH) {
@@ -53,7 +65,7 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
         int sessionNumber = in.readInt();          // 会话序号(4字节)
         short totalPackages = in.readShort();      // 协议总包数(2字节)
         short currentPackage = in.readShort();     // 协议包序号(2字节)
-        // 我们目前的协议加密为：未加密
+        // 我们目前的协议加密为：未加密（不使用数据但需要读取字节）
         int keyNumber = in.readInt();              // 密钥序号(4字节)
         short encryptionType = in.readShort();     // 加密类型(2字节)
         short dataLength = in.readShort();         // 数据长度(2字节)

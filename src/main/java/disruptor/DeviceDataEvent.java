@@ -14,14 +14,29 @@ import model.DeviceData;
 @Getter
 @Setter
 public class DeviceDataEvent {
+    /**
+     * 设备数据值
+     */
     private DeviceData value;
+    /**
+     * 类型
+     */
     private Type type;
 
     public enum Type {
-        TO_TB,  //发送给TB
+        /**
+         * 发送给TB
+         */
+        TO_TB,
+        /**
+         * 发送给设备的指令标记
+         */
         TO_DEVICE //发送给设备
     }
 
+    /**
+     * 清空当前对象中的值
+     */
     public void clear() {
         value = null;
     }

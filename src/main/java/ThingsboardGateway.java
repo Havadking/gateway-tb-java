@@ -34,6 +34,7 @@ import util.LogUtils;
  * @create: 2025-02-07 14:41
  **/
 
+@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class ThingsboardGateway {
     public static void main(String[] args) throws Exception {
         // 1. 创建 Disruptor
@@ -73,7 +74,8 @@ public class ThingsboardGateway {
         mqttReceiver.start();
 
         // 7. 创建 ProtocolHandlerFactory
-        ProtocolHandlerFactory handlerFactory = ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
+        ProtocolHandlerFactory handlerFactory =
+                ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
 
         // 8. 启动卡尔视频话机的 HTTP 服务器
         HttpServer server = new HttpServer(deviceRegistry, taskManager, producer);

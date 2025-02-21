@@ -1,6 +1,5 @@
 package protocol.sender;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
 import model.DeviceData;
 
@@ -12,5 +11,12 @@ import model.DeviceData;
  **/
 
 public interface TcpMessageSender {
+    /**
+     * 向指定设备发送消息
+     *
+     * @param data    设备数据
+     * @param channel 通道信息
+     * @throws Exception 发送过程中遇到异常时抛出
+     */
     void sendMessageToDevice(DeviceData data, Channel channel) throws Exception;
 }

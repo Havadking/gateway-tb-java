@@ -49,6 +49,9 @@ public class MqttReceiver implements MqttCallback {
     private final MqttClient mqttClient;
 
 
+    /**
+     * 任务管理器
+     */
     private final TaskManager taskManager;
 
     /**
@@ -70,7 +73,9 @@ public class MqttReceiver implements MqttCallback {
      */
     private volatile boolean isReconnecting = false;
 
-    public MqttReceiver(DeviceDataEventProducer producer, MqttClient mqttClient, TaskManager taskManager, MqttMessageParserFactory parserFactory) {
+    public MqttReceiver(DeviceDataEventProducer producer,
+                        MqttClient mqttClient, TaskManager taskManager,
+                        MqttMessageParserFactory parserFactory) {
         this.producer = producer;
         this.mqttClient = mqttClient;
         this.taskManager = taskManager;
@@ -78,6 +83,11 @@ public class MqttReceiver implements MqttCallback {
         this.parserFactory = parserFactory;
     }
 
+    /**
+     * 启动方法，用于开始订阅MQTT命令
+     *
+     * @throws MqttException 当订阅过程中出现异常时抛出
+     */
     public void start() throws MqttException {
         // 订阅服务器的RPC命令
         mqttClient.subscribe(GatewayConfig.RPC_TOPIC);
@@ -131,13 +141,14 @@ public class MqttReceiver implements MqttCallback {
                         start();
                     }
                 } catch (Exception e) {
-                    LogUtils.logBusiness("Failed to reconnect to MQTT broker: {}, retry is {}", e.getMessage(), reconnectAttempts.get());
+                    LogUtils.logBusiness("Failed to reconnect to MQTT broker: {}, retry is {}",
+                            e.getMessage(), reconnectAttempts.get());
                     // 继续尝试重连
                     scheduleReconnect();
                 }
             }, delay, TimeUnit.SECONDS);
         } else {
-            LogUtils.logError("【严重】MQTT订阅失败，已达到最大重试次数【严重】{}",new MqttException(new Exception("订阅失败")));
+            LogUtils.logError("【严重】MQTT订阅失败，已达到最大重试次数【严重】{}", new MqttException(new Exception("订阅失败")));
             // 达到最大重连次数，停止重连
             isReconnecting = false;
             // todo 是否需要发送短信提醒
@@ -152,6 +163,7 @@ public class MqttReceiver implements MqttCallback {
      * @param message MQTT消息内容
      * @throws Exception 当处理消息过程中发生错误时抛出异常
      */
+    @SuppressWarnings("checkstyle:ReturnCount")
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         LogUtils.logBusiness("【收到thingsboard】的消息 {}", message);
@@ -187,7 +199,7 @@ public class MqttReceiver implements MqttCallback {
                         personMap.put("userType", personNode.get("userType").asInt());
                         personMap.put("name", personNode.get("name").asText());
                         personMap.put("cardNo", personNode.get("cardNo").asText());
-                        String base64 = imageUrlToBase64( personNode.get("imageUrl").asText());
+                        String base64 = imageUrlToBase64(personNode.get("imageUrl").asText());
                         personMap.put("picture", base64);
                     } else {
                         LogUtils.logBusiness("删除人脸");
@@ -199,7 +211,7 @@ public class MqttReceiver implements MqttCallback {
             }
             Task task = new Task(taskId, device, personList);
             taskManager.addTask(device, task);
-            LogUtils.logBusiness("Added task {} for device {}", task, device);
+            LogUtils.logBusiness("Added task {} for device {}", task.getTaskId(), device);
             return;
         }
 
@@ -214,6 +226,13 @@ public class MqttReceiver implements MqttCallback {
         sendConfirmationResponse(topic, device, id);
     }
 
+    /**
+     * 确定协议类型的方法
+     *
+     * @param method 用于判断协议类型的方法名
+     * @return 对应的协议标识符，若没有匹配项则返回null
+     */
+    @SuppressWarnings("checkstyle:ReturnCount")
     private ProtocolIdentifier determineProtocolType(String method) {
         switch (method) {
             case "send_msg":
@@ -229,8 +248,9 @@ public class MqttReceiver implements MqttCallback {
                 // 视频话机人脸
                 LogUtils.logBusiness("视频话机人脸操作");
                 return ProtocolIdentifier.PROTOCOL_VIDEO_FACE;
+            default:
+                return null;
         }
-        return null;
     }
 
     /**

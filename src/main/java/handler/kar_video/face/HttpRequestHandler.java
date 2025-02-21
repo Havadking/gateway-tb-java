@@ -19,7 +19,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
 import model.DeviceData;
@@ -33,11 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
 /**
  * @program: gateway-netty
  * @description: 处理人脸下发和心跳
@@ -47,26 +41,34 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 @AllArgsConstructor
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
+    /**
+     * 设备注册表实例
+     */
     private final DeviceRegistry deviceRegistry;
+    /**
+     * 设备数据事件生产者
+     */
     private final DeviceDataEventProducer producer;
+    /**
+     * 任务管理器
+     */
     private final TaskManager taskManager;
+    /**
+     * 心跳检测接口URL
+     */
     private static final String HEARTBEAT_URL = "/karface/cp/yf/heart.admin";
+    /**
+     * 对象映射器
+     */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
-//        LogUtils.logBusiness("request is {}", request);
-//        LogUtils.logBusiness("uri is {}", request.uri());
         // 读取请求体中的JSON内容
         ByteBuf content = request.content();
         String jsonContent = content.toString(CharsetUtil.UTF_8);
-//        LogUtils.logBusiness("接收到的JSON内容: {}", jsonContent);
-
         String deviceKey = getDeviceIdFromRequest(jsonContent);
-//        LogUtils.logBusiness("设备ID为{}", deviceKey);
-
         deviceRegistry.registerHttpChannel(deviceKey, ctx.channel());
-
         LogUtils.logBusiness("设备进行HTTP连接，还需要认证{}", deviceKey);
         // 1. 设备没有进行 TCP 链接，不进行 HTTP 连接
         if (deviceRegistry.getChannel(deviceKey) == null) {
@@ -75,7 +77,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             return;
         }
 
-        // --- Handle the request (heartbeat or other) ---
+        // 2. 处理设备发送的内容，现在只有心跳
         if (HEARTBEAT_URL.equals(request.uri())) {
             processHeartbeat(ctx, deviceKey, jsonContent);
         } else {
@@ -92,22 +94,23 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
      * @param jsonContent 心跳内容的JSON字符串
      * @throws JsonProcessingException 当JSON处理发生异常时抛出
      */
-    private void processHeartbeat(ChannelHandlerContext ctx, String deviceKey, String jsonContent) throws JsonProcessingException {
+    private void processHeartbeat(ChannelHandlerContext ctx, String deviceKey, String jsonContent)
+            throws JsonProcessingException {
         LogUtils.logBusiness("Received heartbeat from device {}: {}", deviceKey, jsonContent);
 
-        // --- 1. Check for previous task result ---
+        // --- 1. 检查是否有回执 ---
         JsonNode rootNode = objectMapper.readTree(jsonContent);
         JsonNode resultNode = rootNode.get("result");
         LogUtils.logBusiness("提取出的 result 值为 {}", resultNode);
 
-        // 处理心跳信息
+        // 处理心跳信息（发送到 TB）
         processTaskResult(deviceKey, resultNode, jsonContent);
 
 
-        // --- 2. Get a new task (if available) ---
+        // --- 2. 获取新的任务 ---
         Task task = taskManager.getNextTaskToProcess(deviceKey);
 
-        // --- 3. Build response ---
+        // --- 3. 构建返回数据 ---
         Object responseContent;
         if (task != null) {
             Map<String, Object> taskResult = new HashMap<>();
@@ -126,22 +129,21 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         String jsonResponse = objectMapper.writeValueAsString(
                 Collections.singletonMap("result", responseContent));
 
-        sendJsonResponse(ctx, OK, jsonResponse);
+        sendJsonResponse(ctx, jsonResponse);
     }
 
     /**
      * 发送JSON响应给客户端
      *
      * @param ctx          通道处理器上下文
-     * @param status       HTTP响应状态
      * @param jsonResponse JSON格式的响应字符串
      */
-    private void sendJsonResponse(ChannelHandlerContext ctx, HttpResponseStatus status, String jsonResponse) {
+    private void sendJsonResponse(ChannelHandlerContext ctx, String jsonResponse) {
         // 不打印日志，base64 太长了 非常影响,看日志
 //        LogUtils.logBusiness(" {}", jsonResponse);
         LogUtils.logBusiness("发送HTTP响应");
         FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, status, Unpooled.copiedBuffer(jsonResponse, CharsetUtil.UTF_8)
+                HttpVersion.HTTP_1_1, HttpResponseStatus.OK, Unpooled.copiedBuffer(jsonResponse, CharsetUtil.UTF_8)
         );
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
@@ -151,7 +153,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (future.isSuccess()) {
-                    LogUtils.logBusiness("响应发送成功:{}", status.code());
+                    LogUtils.logBusiness("响应发送成功:{}", HttpResponseStatus.OK.code());
                     // 成功处理逻辑
                     ctx.close();
                 } else {
@@ -169,9 +171,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
      * @param deviceKey     设备标识
      * @param resultNode    结果节点
      * @param heartbeatJson 初始心跳JSON字符串
-     * @throws JsonProcessingException 当处理JSON时发生错误
      */
-    private void processTaskResult(String deviceKey, JsonNode resultNode, String heartbeatJson) throws JsonProcessingException {
+    private void processTaskResult(String deviceKey, JsonNode resultNode, String heartbeatJson) {
         String finalHeartbeatJson = heartbeatJson;
         if (!resultNode.isEmpty()) {
             LogUtils.logBusiness("心跳中有消息回执");
@@ -200,7 +201,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
                     LogUtils.logError("Failed to add taskId to heartbeat JSON", e);
                 }
             } else {
-                LogUtils.logBusiness("Received task result for device {}, but no last sent task found in Redis.", deviceKey);
+                LogUtils.logBusiness("设备{}心跳有回执，但没找到上条任务", deviceKey);
             }
         } else {
             LogUtils.logBusiness("心跳中没有消息回执");

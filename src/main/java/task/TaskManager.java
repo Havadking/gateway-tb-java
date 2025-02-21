@@ -6,8 +6,6 @@ import config.RedisConfig;
 import redis.clients.jedis.JedisPooled;
 import util.LogUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,14 +19,31 @@ import java.util.concurrent.TimeUnit;
  **/
 
 public class TaskManager {
+    /**
+     * Jedis 实例，用于操作 Redis 数据库的连接池。
+     */
     private final JedisPooled jedis = RedisConfig.getJedisPool();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * 定时任务执行器服务，使用单线程的线程池。
+     */
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    /**
+     * 任务超时时间，以秒为单位。
+     */
     private static final long TASK_TIMEOUT_SECONDS = 120;
+    /**
+     * 待处理任务键的前缀
+     */
     private static final String PENDING_TASKS_KEY_PREFIX = "pending_tasks_set:";
+    /**
+     * 任务键的前缀。
+     */
     private static final String TASK_KEY_PREFIX = "task:";
-    // 存储 deviceKey -> 上次发送的 taskId 的映射
+    /**
+     * 上次发送任务的关键字前缀，用于存储设备键与上次发送的任务 ID 之间的映射关系
+     */// 存储 deviceKey -> 上次发送的 taskId 的映射
     private static final String LAST_SENT_TASK_KEY_PREFIX = "last_sent_task:";
 
     private String getPendingTasksKey(String deviceKey) {
@@ -63,6 +78,13 @@ public class TaskManager {
     }
 
 
+    /**
+     * 获取下一个待处理任务。
+     *
+     * @param deviceKey 设备标识
+     * @return 下一个待处理任务对象，如果不存在则返回null
+     */
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:MagicNumber"})
     public Task getNextTaskToProcess(String deviceKey) {
         // 从 Set 中随机弹出一个 task ID(由于每个设备只有一个在处理的任务，所以随机弹出和按顺序弹出没有区别)
         String taskId = jedis.spop(getPendingTasksKey(deviceKey));
@@ -84,8 +106,9 @@ public class TaskManager {
                             try {
                                 Task lastSentTask = objectMapper.readValue(lastSentTaskJson, Task.class);
                                 // Check if still SENT and timed out
-                                if (lastSentTask.getStatus() == Task.TaskStatus.SENT &&
-                                        System.currentTimeMillis() - lastSentTask.getTimestamp() > TASK_TIMEOUT_SECONDS * 1000) {
+                                if (lastSentTask.getStatus() == Task.TaskStatus.SENT
+                                        && System.currentTimeMillis() - lastSentTask.getTimestamp()
+                                                > TASK_TIMEOUT_SECONDS * 1000) {
                                     markTaskFailed(lastSentTask.getTaskId());
                                 }
                             } catch (JsonProcessingException e) {
@@ -108,6 +131,12 @@ public class TaskManager {
         return null;
     }
 
+    /**
+     * 获取指定设备最后一次发送的任务。
+     *
+     * @param deviceKey 设备标识键
+     * @return 最后一次发送的任务，如果不存在或解析失败则返回null
+     */
     public Task getLastSentTask(String deviceKey) {
         String taskJson = jedis.get(getLastSentTaskKey(deviceKey));
         if (taskJson != null) {
@@ -120,35 +149,6 @@ public class TaskManager {
             }
         }
         return null;
-    }
-
-    /**
-     * 获取指定设备未完成的任务列表
-     *
-     * @param deviceKey 设备标识键
-     * @return 未完成的任务列表
-     */
-    public List<Task> getPendingTasks(String deviceKey) {
-        List<Task> pendingTasks = new ArrayList<>();
-
-        // 获取所有的任务 ID
-        List<String> taskIds = jedis.lrange(getPendingTasksKey(deviceKey), 0, -1);
-
-        for (String taskId : taskIds) {
-            String taskJson = jedis.get(getTaskKey(taskId));
-            if (taskJson != null) {
-                try {
-                    // 反序列化任务数据
-                    Task task = objectMapper.readValue(taskJson, Task.class);
-                    pendingTasks.add(task);
-                } catch (JsonProcessingException e) {
-                    LogUtils.logError("数据反序列化失败", e);
-                    // 清除损坏的任务数据
-                    removeTask(taskId);
-                }
-            }
-        }
-        return pendingTasks;
     }
 
 
@@ -217,7 +217,7 @@ public class TaskManager {
 
         // 从 Set 中移除 (只需要操作一次)
         Set<String> keys = jedis.keys(PENDING_TASKS_KEY_PREFIX + "*");
-        for(String key : keys){
+        for (String key : keys) {
             jedis.srem(key, taskId);
         }
     }

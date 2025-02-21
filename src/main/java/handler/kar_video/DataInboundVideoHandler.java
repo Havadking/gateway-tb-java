@@ -77,11 +77,12 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
             // 创建 MQTT 消息对象
             MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
             message.setQos(1);
-            LogUtils.logBusiness("发送设备属性的构建体为:{}",message);
+            LogUtils.logBusiness("发送设备属性的构建体为:{}", message);
             mqttSender.sendAttribute(message);
         } else {
             LogUtils.logBusiness("视频话机数据写入Disruptor:{}", data);
-            DeviceData msg = new DeviceData(ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get(), data, ProtocolIdentifier.PROTOCOL_VIDEO);
+            DeviceData msg = new DeviceData(ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get(),
+                    data, ProtocolIdentifier.PROTOCOL_VIDEO);
             producer.onData(msg, DeviceDataEvent.Type.TO_TB);
         }
     }
