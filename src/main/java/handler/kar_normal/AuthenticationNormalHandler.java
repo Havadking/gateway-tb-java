@@ -52,7 +52,6 @@ public class AuthenticationNormalHandler extends ChannelInboundHandlerAdapter im
             } else {
                 LogUtils.logBusiness("卡尔普通话机认证失败:{}", deviceNo);
                 ctx.close();
-                // todo 是否需要做重试机制
             }
         }
     }

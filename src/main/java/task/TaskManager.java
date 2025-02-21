@@ -56,7 +56,7 @@ public class TaskManager {
             // 使用 sadd 添加到 Set
             jedis.sadd(getPendingTasksKey(deviceKey), task.getTaskId());
 
-            LogUtils.logBusiness("像设备{}的redis中写入了任务{}", deviceKey, task.getTaskId());
+            LogUtils.logBusiness("向设备{}的redis中写入了任务{}", deviceKey, task.getTaskId());
         } catch (JsonProcessingException e) {
             LogUtils.logError("Error serializing task", e);
         }
@@ -86,7 +86,7 @@ public class TaskManager {
                                 // Check if still SENT and timed out
                                 if (lastSentTask.getStatus() == Task.TaskStatus.SENT &&
                                         System.currentTimeMillis() - lastSentTask.getTimestamp() > TASK_TIMEOUT_SECONDS * 1000) {
-                                    markTaskFailed(lastSentTask.getTaskId(), "Task timed out");
+                                    markTaskFailed(lastSentTask.getTaskId());
                                 }
                             } catch (JsonProcessingException e) {
                                 LogUtils.logError("Error deserializing last sent task", e);
@@ -112,7 +112,7 @@ public class TaskManager {
         String taskJson = jedis.get(getLastSentTaskKey(deviceKey));
         if (taskJson != null) {
             try {
-                LogUtils.logBusiness("获取上一次发送的任务{}", taskJson);
+                LogUtils.logBusiness("获取上一次发送的任务{}", deviceKey);
                 return objectMapper.readValue(taskJson, Task.class);
             } catch (JsonProcessingException e) {
                 LogUtils.logError("Error deserializing last sent task", e);
@@ -169,8 +169,8 @@ public class TaskManager {
      */
     public void markTaskSuccess(String taskId) {
         updateTaskStatus(taskId, Task.TaskStatus.SUCCESS, null);
-        removeTask(taskId); // Remove after success
         removeLastSentTask(taskId);
+        removeTask(taskId);
         LogUtils.logBusiness("Task {} completed successfully", taskId);
     }
 
@@ -181,10 +181,10 @@ public class TaskManager {
      * @see #updateTaskStatus(String, Task.TaskStatus, String)
      * @see #removeTask(String)
      */
-    public void markTaskFailed(String taskId, String taskTimedOut) {
+    public void markTaskFailed(String taskId) {
         updateTaskStatus(taskId, Task.TaskStatus.FAILED, "Task timed out");
-        removeTask(taskId);
         removeLastSentTask(taskId);
+        removeTask(taskId);
         LogUtils.logBusiness("Task {} failed: {}", taskId, "Task timed out");
     }
 

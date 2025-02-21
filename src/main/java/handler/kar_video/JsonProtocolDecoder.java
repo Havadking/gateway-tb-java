@@ -130,13 +130,6 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
         if (rootNode.has("command")) {
             String command = rootNode.get("command").asText();
             resultMap.put("command", command);
-
-//            if ("devstatus".equals(command)) {
-//                LogUtils.logBusiness("设备状态作为属性发送");
-//                // 处理设备状态 todo
-//                return null;
-//            }
-
             // 处理请求或响应
             if (rootNode.has("request")) {
                 resultMap.put("request", objectMapper.convertValue(rootNode.get("request"), Map.class));

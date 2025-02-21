@@ -199,7 +199,7 @@ public class MqttReceiver implements MqttCallback {
             }
             Task task = new Task(taskId, device, personList);
             taskManager.addTask(device, task);
-            LogUtils.logBusiness("Added task {} for device {}", taskId, device);
+            LogUtils.logBusiness("Added task {} for device {}", task, device);
             return;
         }
 

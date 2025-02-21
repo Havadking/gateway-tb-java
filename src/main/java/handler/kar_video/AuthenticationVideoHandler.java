@@ -67,7 +67,6 @@ public class AuthenticationVideoHandler extends ChannelInboundHandlerAdapter imp
             } else {
                 LogUtils.logBusiness("卡尔视频话机认证失败：{}", identity);
                 ctx.close();
-                // todo 是否需要做重试机制
             }
         }
 

@@ -3,6 +3,7 @@ package handler.kar_video.face;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import disruptor.DeviceDataEvent;
 import disruptor.DeviceDataEventProducer;
 import io.netty.buffer.ByteBuf;
@@ -17,14 +18,10 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import model.DeviceData;
 import protocol.ProtocolIdentifier;
 import registry.DeviceRegistry;
@@ -59,14 +56,14 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
 //        LogUtils.logBusiness("request is {}", request);
-        LogUtils.logBusiness("uri is {}", request.uri());
+//        LogUtils.logBusiness("uri is {}", request.uri());
         // 读取请求体中的JSON内容
         ByteBuf content = request.content();
         String jsonContent = content.toString(CharsetUtil.UTF_8);
-        LogUtils.logBusiness("接收到的JSON内容: {}", jsonContent);
+//        LogUtils.logBusiness("接收到的JSON内容: {}", jsonContent);
 
         String deviceKey = getDeviceIdFromRequest(jsonContent);
-        LogUtils.logBusiness("设备ID为{}", deviceKey);
+//        LogUtils.logBusiness("设备ID为{}", deviceKey);
 
         deviceRegistry.registerHttpChannel(deviceKey, ctx.channel());
 
@@ -87,6 +84,14 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         }
     }
 
+    /**
+     * 处理设备心跳信息
+     *
+     * @param ctx         通道处理器上下文
+     * @param deviceKey   设备标识
+     * @param jsonContent 心跳内容的JSON字符串
+     * @throws JsonProcessingException 当JSON处理发生异常时抛出
+     */
     private void processHeartbeat(ChannelHandlerContext ctx, String deviceKey, String jsonContent) throws JsonProcessingException {
         LogUtils.logBusiness("Received heartbeat from device {}: {}", deviceKey, jsonContent);
 
@@ -106,9 +111,9 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         Object responseContent;
         if (task != null) {
             Map<String, Object> taskResult = new HashMap<>();
-            taskResult.put("photoList", task.getPersonList());
+            taskResult.put("personList", task.getPersonList());
             responseContent = taskResult;
-            taskManager.markTaskSent(task.getTaskId()); // Mark as sent
+            taskManager.markTaskSent(task.getTaskId());
             LogUtils.logBusiness("Sending task {} to device {}", task.getTaskId(), deviceKey);
         } else {
             Map<String, Object> simpleResult = new HashMap<>();
@@ -124,8 +129,17 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         sendJsonResponse(ctx, OK, jsonResponse);
     }
 
+    /**
+     * 发送JSON响应给客户端
+     *
+     * @param ctx          通道处理器上下文
+     * @param status       HTTP响应状态
+     * @param jsonResponse JSON格式的响应字符串
+     */
     private void sendJsonResponse(ChannelHandlerContext ctx, HttpResponseStatus status, String jsonResponse) {
-        LogUtils.logBusiness("下发任务:{}", jsonResponse);
+        // 不打印日志，base64 太长了 非常影响,看日志
+//        LogUtils.logBusiness(" {}", jsonResponse);
+        LogUtils.logBusiness("发送HTTP响应");
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1, status, Unpooled.copiedBuffer(jsonResponse, CharsetUtil.UTF_8)
         );
@@ -149,24 +163,50 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         });
     }
 
-    private void processTaskResult(String deviceKey, JsonNode resultNode, String heartbeatJson) {
+    /**
+     * 处理任务结果，并根据需要更新心跳JSON
+     *
+     * @param deviceKey     设备标识
+     * @param resultNode    结果节点
+     * @param heartbeatJson 初始心跳JSON字符串
+     * @throws JsonProcessingException 当处理JSON时发生错误
+     */
+    private void processTaskResult(String deviceKey, JsonNode resultNode, String heartbeatJson) throws JsonProcessingException {
+        String finalHeartbeatJson = heartbeatJson;
         if (!resultNode.isEmpty()) {
             LogUtils.logBusiness("心跳中有消息回执");
             Task lastSentTask = taskManager.getLastSentTask(deviceKey);
             if (lastSentTask != null) {
+                // 标记任务成功
                 taskManager.markTaskSuccess(lastSentTask.getTaskId());
-                LogUtils.logBusiness("Result for task {} (device {}): Heartbeat: {}", lastSentTask.getTaskId(), deviceKey, heartbeatJson);
+
+                // 将taskId添加到heartbeatJson中
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode heartbeatNode = mapper.readTree(heartbeatJson);
+
+                    // 创建一个可修改的对象
+                    ObjectNode mutableHeartbeat = (ObjectNode) heartbeatNode;
+
+                    // 添加taskId字段
+                    mutableHeartbeat.put("taskId", lastSentTask.getTaskId());
+
+                    // 将修改后的JSON转换回字符串
+                    finalHeartbeatJson = mapper.writeValueAsString(mutableHeartbeat);
+
+                    LogUtils.logBusiness("Result for task {} (device {}): Heartbeat: {}",
+                            lastSentTask.getTaskId(), deviceKey, finalHeartbeatJson);
+                } catch (Exception e) {
+                    LogUtils.logError("Failed to add taskId to heartbeat JSON", e);
+                }
             } else {
                 LogUtils.logBusiness("Received task result for device {}, but no last sent task found in Redis.", deviceKey);
             }
         } else {
             LogUtils.logBusiness("心跳中没有消息回执");
         }
-        Map<String, String> data = new HashMap<>();
-        data.put("/karface/cp/yf/heart.admin", heartbeatJson);
-        LogUtils.logBusiness("HTTP 心跳构建的遥测数据为{}", data);
-//        DeviceData msg = new DeviceData(deviceKey, data, ProtocolIdentifier.PROTOCOL_VIDEO);
-//        producer.onData(msg, DeviceDataEvent.Type.TO_TB);
+        DeviceData msg = new DeviceData(deviceKey, finalHeartbeatJson, ProtocolIdentifier.PROTOCOL_VIDEO_FACE);
+        producer.onData(msg, DeviceDataEvent.Type.TO_TB);
     }
 
 
@@ -183,32 +223,5 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             return null;
         }
     }
-
-    /**
-     * 解析URI中的查询参数
-     *
-     * @param uri 要解析的URI字符串
-     * @return 包含查询参数的键值对映射，若解析失败返回空映射
-     */
-    private Map<String, String> parseUrlParams(String uri) {
-        try {
-            // 使用 Netty 框架中的 QueryStringDecoder 来解析 URI 中的查询参数
-            QueryStringDecoder decoder = new QueryStringDecoder(uri);
-            Map<String, String> params = new HashMap<>();
-            // 遍历 decoder 解析出的所有参数
-            decoder.parameters().forEach((key, value) -> {
-                // 对每个键值对进行处理
-                // 注意：这里假设每个参数名只对应一个值
-                // 如果参数有多个值（如 key=value1&key=value2），则只取第一个值
-                params.put(key, value.get(0));
-            });
-            LogUtils.logBusiness("解析的结果为{}", params);
-            return params;
-        } catch (Exception e) {
-            LogUtils.logError("Error parsing URL parameters", e);
-            return Collections.emptyMap(); // Return empty map on error
-        }
-    }
-
 
 }

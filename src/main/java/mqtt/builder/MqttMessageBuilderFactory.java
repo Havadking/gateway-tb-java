@@ -55,6 +55,7 @@ public class MqttMessageBuilderFactory {
         MqttMessageBuilderFactory factory = new MqttMessageBuilderFactory();
         factory.registerBuilder(ProtocolIdentifier.PROTOCOL_NORMAL, new MqttMessageNormalBuilder());
         factory.registerBuilder(ProtocolIdentifier.PROTOCOL_VIDEO, new MqttMessageVideoBuilder());
+        factory.registerBuilder(ProtocolIdentifier.PROTOCOL_VIDEO_FACE, new MqttMessageVideoFaceBuilder());
         return factory;
     }
 }
