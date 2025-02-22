@@ -8,6 +8,7 @@ import disruptor.DeviceDataEventHandler;
 import disruptor.DeviceDataEventProducer;
 import handler.ProtocolDetectionHandler;
 import http.HttpServer;
+import http.file_tcp.FileTcpServer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -36,6 +37,7 @@ import util.LogUtils;
 
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class ThingsboardGateway {
+    @SuppressWarnings("checkstyle:RegexpSingleline")
     public static void main(String[] args) throws Exception {
         // 1. 创建 Disruptor
         Disruptor<DeviceDataEvent> disruptor = new Disruptor<>(
@@ -77,12 +79,22 @@ public class ThingsboardGateway {
         ProtocolHandlerFactory handlerFactory =
                 ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
 
-        // 8. 启动卡尔视频话机的 HTTP 服务器
-        HttpServer server = new HttpServer(deviceRegistry, taskManager, producer);
-        server.start();
+        // 8. 启动卡尔视频话机的 HTTP 服务器 和 TCP 文件服务器
+        HttpServer httpServer = new HttpServer(deviceRegistry, taskManager, producer);
+        httpServer.start();
+        FileTcpServer fileTcpServer = new FileTcpServer();
+        fileTcpServer.start();
+        // 启动文件服务器
+//        new Thread(() -> {
+//            try {
+//                FileTcpServer fileTcpServer = new FileTcpServer();
+//                fileTcpServer.start();
+//            } catch (Exception e) {
+//                LogUtils.logError("启动文件服务器失败", e);
+//            }
+//        }).start();
 
-
-        // 9. Netty
+        // 9. 启动 Netty 主线程
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

@@ -1,6 +1,9 @@
 package config;
 
 import lombok.Getter;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisPooled;
 
 /**
@@ -15,11 +18,11 @@ public class RedisConfig {
     /**
      * Redis服务的宿主机地址。
      */
-    private static final String REDIS_HOST = "localhost";
+    private static final String REDIS_HOST = "192.168.3.101";
     /**
      * Redis服务的端口号。
      */
-    private static final int REDIS_PORT = 6379;
+    private static final int REDIS_PORT = 6387;
     /**
      * 用户Redis缓存的前缀
      */
@@ -28,7 +31,12 @@ public class RedisConfig {
      * Redis的密码。
      * 初始值为null，需要在配置时设置实际的密码。
      */
-    private static final String REDIS_PASSWORD = null;
+    private static final String REDIS_PASSWORD = "xxt123XXT";
+
+    /**
+     * Redis数据库索引编号。
+     */
+    private static final int REDIS_DATABASE = 7;
 
     /**
      * Jedis 客户端连接池
@@ -37,11 +45,12 @@ public class RedisConfig {
     private static JedisPooled jedisPool;
 
     static {
-        if (REDIS_PASSWORD != null && REDIS_USER != null) {
-            jedisPool = new JedisPooled(REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD);
-        } else {
-            jedisPool = new JedisPooled(REDIS_HOST, REDIS_PORT);
-        }
+        HostAndPort hostAndPort = new HostAndPort(REDIS_HOST, REDIS_PORT);
+        JedisClientConfig config = DefaultJedisClientConfig.builder()
+                .password(REDIS_PASSWORD)
+                .database(REDIS_DATABASE)
+                .build();
+        jedisPool = new JedisPooled(hostAndPort, config);
     }
 
     /**

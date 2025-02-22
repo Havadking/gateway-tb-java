@@ -27,6 +27,8 @@ public class GatewayConfig {
      * 用于连接到指定thingsboard服务的MQTT协议端点。
      */
     public static final String MQTT_BROKER_URL = "tcp://192.168.9.230:1883"; // 正式thingsboard服务地址
+//    public static final String MQTT_BROKER_URL = "tcp://192.168.5.121:1883"; // 测试thingsboard服务地址
+
     /**
      * MQTT客户端ID。
      * 用于标识连接到MQTT服务器的客户端。
