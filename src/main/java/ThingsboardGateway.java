@@ -84,15 +84,6 @@ public class ThingsboardGateway {
         httpServer.start();
         FileTcpServer fileTcpServer = new FileTcpServer();
         fileTcpServer.start();
-        // 启动文件服务器
-//        new Thread(() -> {
-//            try {
-//                FileTcpServer fileTcpServer = new FileTcpServer();
-//                fileTcpServer.start();
-//            } catch (Exception e) {
-//                LogUtils.logError("启动文件服务器失败", e);
-//            }
-//        }).start();
 
         // 9. 启动 Netty 主线程
         EventLoopGroup bossGroup = new NioEventLoopGroup();
