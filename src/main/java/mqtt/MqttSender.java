@@ -47,7 +47,7 @@ public class MqttSender {
     /**
      * 发布消息的最大速率 (条/秒)
      */
-    private static final int MAX_PUBLISH_RATE = 10;
+    private static final int MAX_PUBLISH_RATE = 50;
 
     /**
      * 消息处理队列
@@ -130,10 +130,11 @@ public class MqttSender {
             } catch (MqttException e) {
                 LogUtils.logBusiness("发布MQTT消息失败: {}, 将重新放入队列", e.getMessage());
                 // 如果发送失败，重新放入队列尾部稍后再试
-                boolean offered = messageQueue.offer(task);
-                if (!offered) {
-                    LogUtils.logBusiness("消息队列已满，无法重新入队: {}", task.getTopic());
-                }
+//                boolean offered = messageQueue.offer(task);
+                LogUtils.logBusiness("当前队列中还有{}条数据", getPendingMessageCount());
+//                if (!offered) {
+//                    LogUtils.logBusiness("消息队列已满，无法重新入队: {}", task.getTopic());
+//                }
             }
         }
     }

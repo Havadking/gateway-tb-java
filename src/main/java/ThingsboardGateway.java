@@ -50,7 +50,7 @@ public class ThingsboardGateway {
 
         // 2. MQTT 连接
         MqttConnection mqttConnection = new MqttConnection();
-        MqttClient mqttClient = mqttConnection.getMqttClient();
+        MqttClient mqttClient = mqttConnection.getMqttClient1();
 
         // 3. 创建组件
         MqttMessageParserFactory parserFactory = MqttMessageParserFactory.createDefault();
@@ -65,9 +65,18 @@ public class ThingsboardGateway {
         // 4. 连接 Disruptor 的 Handler
         MqttMessageBuilderFactory builderFactory = MqttMessageBuilderFactory.createDefault();
         TcpMessageSenderFactory senderFactory = TcpMessageSenderFactory.createDefault();
-        disruptor.handleEventsWith(
-                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory)
-        );
+//        disruptor.handleEventsWith(
+//                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory)
+//        );
+
+        // 创建多个 EventHandler 实例
+        DeviceDataEventHandler[] handlers = new DeviceDataEventHandler[GatewayConfig.DISRUPTOR_HANDLER_COUNT];
+        for (int i = 0; i < GatewayConfig.DISRUPTOR_HANDLER_COUNT; i++) {
+            handlers[i] = new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory);
+        }
+
+        // 并行处理事件
+        disruptor.handleEventsWithWorkerPool(handlers);
 
         // 5. 启动 Disruptor
         disruptor.start();

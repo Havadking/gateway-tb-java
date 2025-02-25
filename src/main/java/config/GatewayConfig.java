@@ -33,11 +33,16 @@ public class GatewayConfig {
      * MQTT客户端ID。
      * 用于标识连接到MQTT服务器的客户端。
      */
-    public static final String MQTT_CLIENT_ID = "TestClient"; // 可以是随机，不重要，不影响
+    public static final String MQTT_CLIENT_ID = "TestClient1"; // 可以是随机，不重要，不影响
     /**
      * MQTT协议连接时使用的用户名，对应TB上设置的网关设备凭证。
      */
     public static final String MQTT_USERNAME = "test123"; // TB上的网关对应的设备凭证
+
+    /**
+     * MQTT协议连接时使用的用户名，对应TB上的网关设备凭证。
+     */
+    public static final String MQTT_USERNAME_2 = "test456"; // TB上的网关对应的设备凭证
     /**
      * 接收来自ThingsBoard的RPC信息的主题
      */
@@ -62,7 +67,7 @@ public class GatewayConfig {
     /**
      * Disruptor 缓冲区大小常量，默认为1024，根据实际情况调整。
      */
-    public static final int DISRUPTOR_BUFFER_SIZE = 1024; // Disruptor 缓冲区大小，根据实际情况调整
+    public static final int DISRUPTOR_BUFFER_SIZE = 2048; // Disruptor 缓冲区大小，根据实际情况调整
 
     /**
      * 读数据超时时间，单位为秒，超时后自动断开连接
@@ -77,4 +82,10 @@ public class GatewayConfig {
      */
     public static final int RECEIVER_RECONNECT_RETRY = 10; // MQTT连接重试最大次数
 
+    /**
+     * Disruptor处理器数量
+     * 建议设置为可用处理器核心数量，以获得最佳并行性能
+     */
+//    public static final int DISRUPTOR_HANDLER_COUNT = Runtime.getRuntime().availableProcessors();
+    public static final int DISRUPTOR_HANDLER_COUNT = 2;
 }

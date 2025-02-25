@@ -1,6 +1,7 @@
 package disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.WorkHandler;
 import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
 import mqtt.MqttSender;
@@ -20,7 +21,7 @@ import util.LogUtils;
  **/
 
 @AllArgsConstructor
-public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
+public class DeviceDataEventHandler implements WorkHandler<DeviceDataEvent> {
 
     /**
      * MQTT消息发送器
@@ -45,34 +46,35 @@ public class DeviceDataEventHandler implements EventHandler<DeviceDataEvent> {
 
     /**
      * 处理设备数据事件。
-     * <p>
-     * 当接收到设备数据事件时，根据事件类型将数据发送到Thingsboard或者设备，
-     * 并记录相应的日志信息。
      *
      * @param event      设备数据事件对象
-     * @param sequence   事件序列号
-     * @param endOfBatch 标识是否为批处理结束的事件
      * @throws Exception 在处理事件过程中可能抛出的异常
      */
     @Override
-    public void onEvent(DeviceDataEvent event, long sequence, boolean endOfBatch) throws Exception {
-        LogUtils.logBusiness("消费了{}，数据为{}", sequence, event.getValue().getMsg());
-        if (event.getType() == DeviceDataEvent.Type.TO_TB) {
-            // 1. 获取对应的信息构建器
-            MqttMessageBuilder builder = builderFactory.getBuilder(event.getValue().getProtocolType());
-            // 2. 构建 MQTT 消息
-            MqttMessage message = builder.buildMessage(event.getValue());
-            // 3. 发送 MQTT 信息
-            mqttSender.sendToThingsboard(message);
-        } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
-            // 由Thingsboard发送到设备
-            // 1. 获取该数据流的 Channel
-            Channel channel = deviceRegistry.getChannel(event.getValue().getDeviceId());
-            // 2. 获取对应的信息发送器
-            TcpMessageSender sender = senderFactory.getSender(event.getValue().getProtocolType());
-            // 3. 发送数据到设备
-            sender.sendMessageToDevice(event.getValue(), channel);
+    public void onEvent(DeviceDataEvent event) throws Exception {
+        try {
+            LogUtils.logBusiness("处理者[{}]消费了事件，数据为{}",
+                    Thread.currentThread().getName(), event.getValue().getMsg());
+
+            if (event.getType() == DeviceDataEvent.Type.TO_TB) {
+                // 1. 获取对应的信息构建器
+                MqttMessageBuilder builder = builderFactory.getBuilder(event.getValue().getProtocolType());
+                // 2. 构建 MQTT 消息
+                MqttMessage message = builder.buildMessage(event.getValue());
+                // 3. 发送 MQTT 信息
+                mqttSender.sendToThingsboard(message);
+            } else if (event.getType() == DeviceDataEvent.Type.TO_DEVICE) {
+                // 由Thingsboard发送到设备
+                // 1. 获取该数据流的 Channel
+                Channel channel = deviceRegistry.getChannel(event.getValue().getDeviceId());
+                // 2. 获取对应的信息发送器
+                TcpMessageSender sender = senderFactory.getSender(event.getValue().getProtocolType());
+                // 3. 发送数据到设备
+                sender.sendMessageToDevice(event.getValue(), channel);
+            }
+        } finally {
+            // 确保在任何情况下都清理事件
+            event.clear();
         }
-        event.clear();
     }
 }
