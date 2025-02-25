@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import config.GatewayConfig;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -13,12 +14,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @program: gateway-netty
- * @description: 用于发送给TB
+ * @description: 用于发送给TB，增加了消息队列和限流机制
  * @author: Havad
- * @create: 2025-02-08 14:36
+ * @create: 2025-02-25 14:36
  **/
 
 @AllArgsConstructor
@@ -32,25 +39,151 @@ public class MqttSender {
      */
     private static final Random RANDOM = new Random();
 
+    /**
+     * 消息队列最大容量
+     */
+    private static final int QUEUE_CAPACITY = 1000;
+
+    /**
+     * 发布消息的最大速率 (条/秒)
+     */
+    private static final int MAX_PUBLISH_RATE = 10;
+
+    /**
+     * 消息处理队列
+     */
+    private final BlockingQueue<MqttPublishTask> messageQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+
+    /**
+     * 调度器，用于定期从队列提取消息并发布
+     */
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    /**
+     * 队列处理器是否已启动
+     */
+    private final AtomicBoolean processorStarted = new AtomicBoolean(false);
+
+    /**
+     * 消息发布任务类
+     */
+    @Getter
+    private static class MqttPublishTask {
+        /**
+         * 主题
+         */
+        private final String topic;
+        /**
+         * MQTT消息对象。
+         */
+        private final MqttMessage message;
+
+        MqttPublishTask(String topic, MqttMessage message) {
+            this.topic = topic;
+            this.message = message;
+        }
+
+    }
+
+    /**
+     * 初始化消息处理器
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public void init() {
+        if (processorStarted.compareAndSet(false, true)) {
+            // 计算发布间隔（毫秒）
+            long publishIntervalMs = 1000 / MAX_PUBLISH_RATE;
+
+            // 启动定时任务，定期从队列中取出消息并发布
+            scheduler.scheduleAtFixedRate(this::processQueuedMessages, 0, publishIntervalMs, TimeUnit.MILLISECONDS);
+
+            LogUtils.logBusiness("MQTT消息队列处理器已启动，发布速率限制为：{} 条/秒", MAX_PUBLISH_RATE);
+        }
+    }
+
+    /**
+     * 处理队列中的消息
+     */
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private void processQueuedMessages() {
+        if (messageQueue.isEmpty()) {
+            return;
+        }
+
+        MqttPublishTask task = messageQueue.poll();
+        if (task != null) {
+            try {
+                if (!mqttClient.isConnected()) {
+                    try {
+                        mqttClient.reconnect();
+                    } catch (MqttException e) {
+                        LogUtils.logBusiness("MQTT客户端重连失败: {}", e.getMessage());
+                        // 重新放回队列稍后处理
+                        messageQueue.offer(task);
+                        return;
+                    }
+                }
+
+                // 发布消息
+                mqttClient.publish(task.getTopic(), task.getMessage());
+                LogUtils.logBusiness("成功发布MQTT消息到主题: {}", task.getTopic());
+            } catch (MqttException e) {
+                LogUtils.logBusiness("发布MQTT消息失败: {}, 将重新放入队列", e.getMessage());
+                // 如果发送失败，重新放入队列尾部稍后再试
+                boolean offered = messageQueue.offer(task);
+                if (!offered) {
+                    LogUtils.logBusiness("消息队列已满，无法重新入队: {}", task.getTopic());
+                }
+            }
+        }
+    }
+
+    /**
+     * 将消息添加到发布队列
+     *
+     * @param topic MQTT主题
+     * @param message MQTT消息
+     * @return 是否成功添加到队列
+     */
+    private boolean enqueueMessage(String topic, MqttMessage message) {
+        // 确保处理器已启动
+        if (!processorStarted.get()) {
+            init();
+        }
+
+        MqttPublishTask task = new MqttPublishTask(topic, message);
+        boolean success = messageQueue.offer(task);
+
+        if (!success) {
+            LogUtils.logBusiness("MQTT消息队列已满，无法添加新消息: {}", topic);
+        }
+
+        return success;
+    }
+
+    /**
+     * 关闭清理资源
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public void shutdown() {
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 
     /**
      * 发送设备已连接的通知
      *
      * @param deviceNo 设备编号
-     * @throws RuntimeException 当生成JSON消息或发布MQTT消息失败时抛出运行时异常
+     * @throws RuntimeException 当生成JSON消息失败时抛出运行时异常
      */
     public void sendDeviceConnected(String deviceNo) {
-        /*
-          参考：
-          设备连接API
-          通知ThingsBoard设备已连接到网关需要发布以下消息：
-          Topic: v1/gateway/connect
-          Message: {"device":"Device A"}
-          Device A 代表你的设备名称。
-          收到后ThingsBoard将查找或创建具有指定名称的设备。
-          ThingsBoard还将向该网关发布有关特定设备的新属性更新和RPC命令的消息。
-         */
-
         // 构建信息载荷
         Map<String, String> payloadMap = new HashMap<>();
         payloadMap.put("device", deviceNo);
@@ -64,36 +197,26 @@ public class MqttSender {
             MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
             message.setQos(1);
 
-            // 发布消息到指定topic
-            mqttClient.publish(GatewayConfig.CONNECT_TOPIC, message);
-            LogUtils.logBusiness("设备连接{}", deviceNo);
+            // 添加到发布队列而不是直接发布
+            boolean enqueued = enqueueMessage(GatewayConfig.CONNECT_TOPIC, message);
+            if (enqueued) {
+                LogUtils.logBusiness("设备连接消息已加入队列: {}", deviceNo);
+            } else {
+                throw new RuntimeException("设备连接消息加入队列失败: " + deviceNo);
+            }
         } catch (JsonProcessingException e) {
             LogUtils.logError("生成设备连接 JSON 消息失败：{}", e);
             throw new RuntimeException(e);
-        } catch (MqttException e) {
-            LogUtils.logError("发布设备连接 MQTT 消息失败：{}", e);
-            throw new RuntimeException(e);
         }
-
     }
 
     /**
      * 发送设备断开连接通知
      *
      * @param deviceNo 设备编号
-     * @throws RuntimeException 当生成JSON消息失败或发布MQTT消息失败时抛出运行时异常
+     * @throws RuntimeException 当生成JSON消息失败时抛出运行时异常
      */
     public void sendDeviceDisconnected(String deviceNo) {
-        /*
-          参考：
-          设备断开API
-          为了通知ThingsBoard设备已与网关断开连接，需要发布以下消息：
-          Topic: v1/gateway/disconnect
-          Message: {"device":"Device A"}
-          Device A 代表你的设备名称。
-          一旦收到ThingsBoard将不再将此特定设备的更新发布到此网关。
-         */
-
         // 构建信息载荷
         Map<String, String> payloadMap = new HashMap<>();
         payloadMap.put("device", deviceNo);
@@ -107,17 +230,17 @@ public class MqttSender {
             MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
             message.setQos(1);
 
-            // 发布消息到指定topic
-            mqttClient.publish(GatewayConfig.DISCONNECT_TOPIC, message);
-            LogUtils.logBusiness("设备断开{}", deviceNo);
+            // 添加到发布队列而不是直接发布
+            boolean enqueued = enqueueMessage(GatewayConfig.DISCONNECT_TOPIC, message);
+            if (enqueued) {
+                LogUtils.logBusiness("设备断开消息已加入队列: {}", deviceNo);
+            } else {
+                throw new RuntimeException("设备断开消息加入队列失败: " + deviceNo);
+            }
         } catch (JsonProcessingException e) {
             LogUtils.logError("生成设备断开 JSON 消息失败：{}", e);
             throw new RuntimeException(e);
-        } catch (MqttException e) {
-            LogUtils.logError("发布设备断开 MQTT 消息失败：{}", e);
-            throw new RuntimeException(e);
         }
-
     }
 
     /**
@@ -127,60 +250,37 @@ public class MqttSender {
      * @throws RuntimeException 当发送Mqtt消息失败时抛出运行时异常
      */
     public void sendAttribute(MqttMessage message) {
-        try {
-            // 发布消息到指定topic
-            mqttClient.publish(GatewayConfig.ATTRIBUTE_TOPIC, message);
-            LogUtils.logBusiness("发送设备属性{}", message);
-        } catch (MqttException e) {
-            LogUtils.logError("发送设备属性 MQTT 消息失败：{}", e);
-            throw new RuntimeException(e);
+        boolean enqueued = enqueueMessage(GatewayConfig.ATTRIBUTE_TOPIC, message);
+        if (enqueued) {
+            LogUtils.logBusiness("设备属性消息已加入队列: {}", message);
+        } else {
+            LogUtils.logBusiness("设备属性消息加入队列失败: {}", message);
+            throw new RuntimeException("设备属性消息加入队列失败");
         }
     }
-
 
     /**
      * 发送遥测数据到Thingsboard
      *
      * @param message MQTT消息对象，包含设备遥测数据
-     * @throws MqttException 当通过MQTT发送消息遇到问题时抛出
+     * @throws RuntimeException 当通过MQTT发送消息遇到问题时抛出
      */
-    @SuppressWarnings("checkstyle:MagicNumber")
-    public void sendToThingsboard(MqttMessage message) throws MqttException {
-        int maxRetries = GatewayConfig.MQTT_SEND_RETRY;  // 最大重试次数
-        int baseIntervalMs = 1000;  // 基础重试间隔（毫秒）
-        int maxIntervalMs = 10000;  // 最大重试间隔（毫秒）
-        int currentRetry = 0;
-        while (currentRetry <= maxRetries) {
-            try {
-                LogUtils.logBusiness("正在发送遥测数据 (第 {} 次尝试): {}", currentRetry + 1, message);
-                // 发布消息
-                mqttClient.publish(GatewayConfig.TELEMETRY_TOPIC, message);
-                LogUtils.logBusiness("发送遥测数据[{}]成功（第{}次尝试）", message, currentRetry + 1);
-                // 发送成功，退出循环
-                break;
-            } catch (Exception e) {
-                if (!mqttClient.isConnected()) {
-                    mqttClient.reconnect();
-                }
-                currentRetry++;
-                if (currentRetry > maxRetries) {
-                    LogUtils.logError("{}发送遥测数据失败，已达到最大重试次数（{}次）", e, maxRetries);
-                    throw new RuntimeException("发送遥测数据失败，已达到最大重试次数", e);
-                }
-                // 计算指数退避时间
-                int retryIntervalMs = Math.min(
-                        baseIntervalMs * (1 << (currentRetry - 1)) + RANDOM.nextInt(1000),
-                        maxIntervalMs
-                );
-                LogUtils.logBusiness("发送遥测数据失败，将在 {} 毫秒后进行第 {} 次重试。错误信息：{}",
-                        retryIntervalMs, currentRetry, e.getMessage());
-                try {
-                    Thread.sleep(retryIntervalMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("重试等待被中断", ie);
-                }
-            }
+    public void sendToThingsboard(MqttMessage message) {
+        boolean enqueued = enqueueMessage(GatewayConfig.TELEMETRY_TOPIC, message);
+        if (enqueued) {
+            LogUtils.logBusiness("遥测数据消息已加入队列: {}", message);
+        } else {
+            LogUtils.logError("遥测数据消息加入队列失败: {}", new Throwable(), message);
+            throw new RuntimeException("遥测数据消息加入队列失败");
         }
+    }
+
+    /**
+     * 当前队列中待处理的消息数量
+     *
+     * @return 队列中的消息数量
+     */
+    public int getPendingMessageCount() {
+        return messageQueue.size();
     }
 }

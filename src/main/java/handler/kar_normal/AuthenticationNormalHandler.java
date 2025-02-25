@@ -42,7 +42,8 @@ public class AuthenticationNormalHandler extends ChannelInboundHandlerAdapter im
         } else {
             LogUtils.logBusiness("卡尔普通话机协议格式验证成功：{}", msg);
             String deviceNo = PDUUtil.getDeviceNo((String) msg);
-            if (AuthDeviceUtil.getDeviceAuth(deviceNo)) {
+            // todo 测试用，假设所有的设备都能通过认证
+            if (AuthDeviceUtil.getDeviceAuthTest(deviceNo)) {
                 LogUtils.logBusiness("卡尔普通话机认证成功:{}", deviceNo);
                 deviceRegistry.register(deviceNo, ctx.channel());
                 ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).set(deviceNo);
