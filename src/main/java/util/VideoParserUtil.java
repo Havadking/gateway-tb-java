@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class VideoParserUtil {
     /**
      * 同步标识的前缀字节
-     *///同步标识
+     */
     private static final byte ASYNC_IDENTITY_PREFIX = 0x40;
     /**
      * 异步标识后缀，对应设备类型字符 'G' 的十六进制值
@@ -40,7 +40,7 @@ public class VideoParserUtil {
     private static final byte ASYNC_IDENTITY_SUFFIX = 0x47;  // 根据设备类型，如 'G' 对应 0x47
     /**
      * 协议加密类型
-     *///协议加密类型
+     */
     private static final byte[] ENCRYPTION_TYPE = {0x27, 0x10};
     /**
      * 密钥索引
@@ -56,7 +56,6 @@ public class VideoParserUtil {
     // 定义一个AttributeKey来存储会话计数器
     private static final AttributeKey<AtomicInteger> SESSION_COUNTER =
             AttributeKey.valueOf("SESSION_COUNTER");
-
 
     /**
      * 将图片URL转换为Base64编码的字符串
@@ -124,6 +123,7 @@ public class VideoParserUtil {
             case "setConfigInfo":
             case "getConfigInfo":
             case "querySIM":
+            case "notice":
                 return "request";
             default:
                 return "response";
@@ -145,6 +145,7 @@ public class VideoParserUtil {
             case "setConfigInfo":
             case "getConfigInfo":
             case "querySIM":
+            case "notice":
                 return "response";
             default:
                 return "request";

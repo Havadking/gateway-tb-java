@@ -8,6 +8,7 @@ import disruptor.DeviceDataEventHandler;
 import disruptor.DeviceDataEventProducer;
 import handler.ProtocolDetectionHandler;
 import http.HttpServer;
+import http.file_tcp.FileTcpServer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -36,6 +37,7 @@ import util.LogUtils;
 
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 public class ThingsboardGateway {
+    @SuppressWarnings("checkstyle:RegexpSingleline")
     public static void main(String[] args) throws Exception {
         // 1. 创建 Disruptor
         Disruptor<DeviceDataEvent> disruptor = new Disruptor<>(
@@ -48,7 +50,7 @@ public class ThingsboardGateway {
 
         // 2. MQTT 连接
         MqttConnection mqttConnection = new MqttConnection();
-        MqttClient mqttClient = mqttConnection.getMqttClient();
+        MqttClient mqttClient = mqttConnection.getMqttClient1();
 
         // 3. 创建组件
         MqttMessageParserFactory parserFactory = MqttMessageParserFactory.createDefault();
@@ -63,9 +65,18 @@ public class ThingsboardGateway {
         // 4. 连接 Disruptor 的 Handler
         MqttMessageBuilderFactory builderFactory = MqttMessageBuilderFactory.createDefault();
         TcpMessageSenderFactory senderFactory = TcpMessageSenderFactory.createDefault();
-        disruptor.handleEventsWith(
-                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory)
-        );
+//        disruptor.handleEventsWith(
+//                new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory)
+//        );
+
+        // 创建多个 EventHandler 实例
+        DeviceDataEventHandler[] handlers = new DeviceDataEventHandler[GatewayConfig.DISRUPTOR_HANDLER_COUNT];
+        for (int i = 0; i < GatewayConfig.DISRUPTOR_HANDLER_COUNT; i++) {
+            handlers[i] = new DeviceDataEventHandler(mqttSender, deviceRegistry, builderFactory, senderFactory);
+        }
+
+        // 并行处理事件
+        disruptor.handleEventsWithWorkerPool(handlers);
 
         // 5. 启动 Disruptor
         disruptor.start();
@@ -77,12 +88,13 @@ public class ThingsboardGateway {
         ProtocolHandlerFactory handlerFactory =
                 ProtocolHandlerFactory.createDefault(deviceRegistry, producer, mqttSender);
 
-        // 8. 启动卡尔视频话机的 HTTP 服务器
-        HttpServer server = new HttpServer(deviceRegistry, taskManager, producer);
-        server.start();
+        // 8. 启动卡尔视频话机的 HTTP 服务器 和 TCP 文件服务器
+        HttpServer httpServer = new HttpServer(deviceRegistry, taskManager, producer);
+        httpServer.start();
+        FileTcpServer fileTcpServer = new FileTcpServer();
+        fileTcpServer.start();
 
-
-        // 9. Netty
+        // 9. 启动 Netty 主线程
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
