@@ -1,18 +1,18 @@
 package kafka;
 
+import gataway.model.DeviceData;
+import gataway.mqtt.MqttSender;
+import gataway.mqtt.builder.MqttMessageBuilder;
+import gataway.mqtt.builder.MqttMessageBuilderFactory;
+import gataway.protocol.sender.TcpMessageSender;
+import gataway.protocol.sender.TcpMessageSenderFactory;
+import gataway.registry.DeviceRegistry;
+import gataway.util.LogUtils;
 import io.netty.channel.Channel;
 import lombok.AllArgsConstructor;
-import model.DeviceData;
-import mqtt.MqttSender;
-import mqtt.builder.MqttMessageBuilder;
-import mqtt.builder.MqttMessageBuilderFactory;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import protocol.sender.TcpMessageSender;
-import protocol.sender.TcpMessageSenderFactory;
-import registry.DeviceRegistry;
-import util.LogUtils;
 
 /**
  * @program: gateway-netty
@@ -49,7 +49,7 @@ public class DeviceDataKafkaConsumer {
      * @param deviceData 设备数据对象
      * @throws Exception 在处理过程中可能抛出的异常
      */
-    @KafkaListener(topics = KafkaTopics.TO_TB, containerFactory = "deviceDataKafkaListenerContainerFactory")
+    @KafkaListener(topics = KafkaConfig.TO_TB_TOPIC, containerFactory = "deviceDataKafkaListenerContainerFactory")
     public void handleToThingsBoard(DeviceData deviceData) throws Exception {
         try {
             LogUtils.logBusiness("消费者处理发往TB的消息，数据为{}", deviceData.getMsg());
@@ -72,7 +72,7 @@ public class DeviceDataKafkaConsumer {
      * @param deviceData 设备数据对象
      * @throws Exception 在处理过程中可能抛出的异常
      */
-    @KafkaListener(topics = KafkaTopics.TO_DEVICE, containerFactory = "deviceDataKafkaListenerContainerFactory")
+    @KafkaListener(topics = KafkaConfig.TO_DEVICE_TOPIC, containerFactory = "deviceDataKafkaListenerContainerFactory")
     public void handleToDevice(DeviceData deviceData) throws Exception {
         try {
             LogUtils.logBusiness("消费者处理发往设备的消息，数据为{}", deviceData.getMsg());

@@ -11,6 +11,7 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
   </properties>
+
   <dependencies>
     <!-- Netty Core -->
     <dependency>
@@ -18,7 +19,8 @@
       <artifactId>netty-all</artifactId>
       <version>4.1.97.Final</version>
     </dependency>
-    <!-- JSON 处理 (Jackson) -->
+
+    <!-- JSON 处理 -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -29,12 +31,14 @@
       <artifactId>fastjson</artifactId>
       <version>1.2.83</version>
     </dependency>
+
     <!-- MQTT 客户端 -->
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
       <version>1.2.5</version>
     </dependency>
+
     <!-- Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -43,23 +47,54 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Disruptor -->
     <dependency>
       <groupId>com.lmax</groupId>
       <artifactId>disruptor</artifactId>
       <version>3.4.4</version>
     </dependency>
 
+    <!-- Log4j2 -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
       <version>2.20.0</version>
     </dependency>
 
-    <!-- Kafka -->
+    <!-- Spring Boot 依赖 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+      <version>2.7.14</version>
+    </dependency>
+
+    <!-- Spring Kafka 依赖 -->
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
       <version>2.8.11</version>
+    </dependency>
+
+    <!-- Spring Boot 配置处理器 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <version>2.7.14</version>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Spring Boot Web (如果需要Web控制台或REST API) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>2.7.14</version>
+      <exclusions>
+        <!-- 排除内置的Tomcat（如果你不需要Web服务器或使用自己的Netty） -->
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-tomcat</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Redis -->
@@ -68,6 +103,7 @@
       <artifactId>jedis</artifactId>
       <version>4.4.3</version>
     </dependency>
+
   </dependencies>
 
   <build>
