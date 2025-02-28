@@ -3,7 +3,7 @@ netty:
 
 mqtt:
   url: tcp://192.168.9.230:1883
-  client-id: thingsboard-gateway
+  client-id: test
   username: test123
 
 

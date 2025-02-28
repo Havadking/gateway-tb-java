@@ -1,5 +1,6 @@
 package cn.xxt.gatewaynetty.netty.handler.kar_video;
 
+import cn.xxt.gatewaynetty.kafka.DeviceDataKafkaProducer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cn.xxt.gatewaynetty.netty.disruptor.DeviceDataEvent;
@@ -33,7 +34,7 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
     /**
      * 设备数据事件生产者
      */
-    private final DeviceDataEventProducer producer;
+    private final DeviceDataKafkaProducer producer;
 
     /**
      * MQTT消息发送器
@@ -83,7 +84,7 @@ public class DataInboundVideoHandler extends ChannelInboundHandlerAdapter implem
             LogUtils.logBusiness("视频话机数据写入Disruptor:{}", data);
             DeviceData msg = new DeviceData(ctx.channel().attr(AttributeKey.<String>valueOf("deviceId")).get(),
                     data, ProtocolIdentifier.PROTOCOL_VIDEO);
-            producer.onData(msg, DeviceDataEvent.Type.TO_TB);
+            producer.sendData(msg, DeviceDataEvent.Type.TO_TB);
         }
     }
 

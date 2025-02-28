@@ -4,11 +4,13 @@ import cn.xxt.gatewaynetty.netty.exceptions.UnsupportedProtocolException;
 import cn.xxt.gatewaynetty.netty.handler.kar_normal.AuthenticationNormalHandler;
 import cn.xxt.gatewaynetty.netty.handler.kar_normal.DataInboundNormalHandler;
 import cn.xxt.gatewaynetty.mqtt.MqttSender;
+import cn.xxt.gatewaynetty.netty.handler.kar_video.AuthenticationVideoHandler;
+import cn.xxt.gatewaynetty.netty.handler.kar_video.DataInboundVideoHandler;
+import cn.xxt.gatewaynetty.netty.handler.kar_video.JsonProtocolDecoder;
 import cn.xxt.gatewaynetty.netty.registry.DeviceRegistry;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.string.StringDecoder;
 import cn.xxt.gatewaynetty.kafka.DeviceDataKafkaProducer;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,11 +111,11 @@ public class ProtocolHandlerFactory {
         factory.registerDecoder(ProtocolIdentifier.PROTOCOL_NORMAL, StringDecoder::new);
 
         // 注册视频话机的协议的 gateway.handler
-//        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
-//                () -> new AuthenticationVideoHandler(deviceRegistry));
-//        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
-//                () -> new DataInboundVideoHandler(producer, sender));
-//        factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
+                () -> new AuthenticationVideoHandler(deviceRegistry));
+        factory.registerHandler(ProtocolIdentifier.PROTOCOL_VIDEO,
+                () -> new DataInboundVideoHandler(producer, sender));
+        factory.registerDecoder(ProtocolIdentifier.PROTOCOL_VIDEO, JsonProtocolDecoder::new);
 
         return factory;
     }

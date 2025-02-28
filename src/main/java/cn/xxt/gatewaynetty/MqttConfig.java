@@ -29,7 +29,7 @@ public class MqttConfig {
      * 创建MQTT连接
      */
     @Bean
-    public MqttConnection mqttConnection() throws MqttException {
+    public MqttConnection mqttConnection() {
         return new MqttConnection(mqttUrl, mqttClientId, mqttUsername);
     }
 
