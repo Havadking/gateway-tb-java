@@ -13,7 +13,7 @@ import redis.clients.jedis.JedisPooled;
  * @create: 2025-02-17 16:30
  **/
 
-@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
+@SuppressWarnings({"checkstyle:HideUtilityClassConstructor", "checkstyle:JavadocVariable", "checkstyle:FinalClass"})
 public class RedisConfig {
     /**
      * Redis服务的宿主机地址。
@@ -62,6 +62,13 @@ public class RedisConfig {
         if (jedisPool != null) {
             jedisPool.close();
         }
+    }
+
+    /**
+     * 私有构造函数，防止外部实例化该工具类。
+     */
+    private RedisConfig() {
+        throw new IllegalStateException("Utility class");
     }
 
 }
