@@ -1,6 +1,5 @@
-package cn.xxt.gatewaynetty.netty.disruptor;
+package cn.xxt.gatewaynetty.netty.model;
 
-import cn.xxt.gatewaynetty.netty.model.DeviceData;
 import lombok.Getter;
 import lombok.Setter;
 

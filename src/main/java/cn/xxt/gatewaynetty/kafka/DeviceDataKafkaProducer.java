@@ -1,6 +1,6 @@
 package cn.xxt.gatewaynetty.kafka;
 
-import cn.xxt.gatewaynetty.netty.disruptor.DeviceDataEvent;
+import cn.xxt.gatewaynetty.netty.model.DeviceDataEvent;
 import cn.xxt.gatewaynetty.netty.model.DeviceData;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;

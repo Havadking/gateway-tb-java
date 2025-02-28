@@ -16,13 +16,30 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 @Getter
 public class MqttConnection {
 
+    /**
+     * MQTT服务器URL。
+     */
     private final String mqttUrl;
+    /**
+     * 客户端ID
+     */
     private final String clientId;
+    /**
+     * 用户名
+     */
     private final String username;
+    /**
+     * MQTT客户端实例
+     */
     private MqttClient mqttClient;
 
     /**
-     * 构造函数
+     * 构造MqttConnection对象。
+     *
+     * @param mqttUrl  MQTT服务器URL
+     * @param clientId 客户端ID
+     * @param username MQTT用户名
+     * @throws RuntimeException 如果初始化MQTT客户端失败
      */
     public MqttConnection(String mqttUrl, String clientId, String username) {
         this.mqttUrl = mqttUrl;
@@ -36,6 +53,14 @@ public class MqttConnection {
         }
     }
 
+    /**
+     * 初始化 MQTT 客户端
+     * <p>
+     * 本方法负责创建 MQTT 客户端，配置连接选项，并尝试连接到 MQTT 代理（Broker）。
+     *
+     * @throws MqttException 当连接过程中发生错误时抛出此异常
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void initMqttClient() throws MqttException {
         // 1. 创建持久化对象
         // 使用内存持久化
@@ -59,6 +84,6 @@ public class MqttConnection {
 
         // 4. 连接 MQTT Broker
         mqttClient.connect(connOpts);
-        LogUtils.logBusiness("=====网关1成功建立MQTT连接=====");
+        LogUtils.logBusiness("=====网关成功建立MQTT连接=====");
     }
 }

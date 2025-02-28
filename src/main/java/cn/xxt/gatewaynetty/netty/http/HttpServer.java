@@ -18,6 +18,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,6 +30,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class HttpServer {
+    /**
+     * Netty服务的端口号
+     */
+    @Value(value = "${netty.http_port}")
+    private int port;
     /**
      * 设备注册信息
      */
@@ -92,8 +98,8 @@ public class HttpServer {
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             // Bind and start to accept incoming connections.
-            ChannelFuture f = b.bind(GatewayConfig.HTTP_PORT).sync();
-            LogUtils.logBusiness("HTTP server started on port {}", GatewayConfig.HTTP_PORT);
+            ChannelFuture f = b.bind(port).sync();
+            LogUtils.logBusiness("HTTP server started on port {}", port);
             channel = f.channel();
 //            f.channel().closeFuture().sync();
 

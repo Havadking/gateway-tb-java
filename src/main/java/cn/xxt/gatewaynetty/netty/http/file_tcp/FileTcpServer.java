@@ -10,6 +10,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,6 +22,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class FileTcpServer {
+    /**
+     * Netty服务的端口号
+     */
+    @Value(value = "${netty.file_port}")
+    private int port;
 
     /**
      * 主事件循环组
@@ -59,8 +65,8 @@ public class FileTcpServer {
                         }
                     });
 
-            ChannelFuture f = b.bind(GatewayConfig.FILE_PORT).sync();
-            LogUtils.logBusiness("File server started on port {}", GatewayConfig.FILE_PORT);
+            ChannelFuture f = b.bind(port).sync();
+            LogUtils.logBusiness("File server started on port {}", port);
             channel = f.channel(); // 保存channel引用
             // 不调用 f.channel().closeFuture().sync();
 

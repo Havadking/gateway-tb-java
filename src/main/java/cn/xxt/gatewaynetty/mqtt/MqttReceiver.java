@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cn.xxt.gatewaynetty.netty.config.GatewayConfig;
-import cn.xxt.gatewaynetty.netty.disruptor.DeviceDataEvent;
+import cn.xxt.gatewaynetty.netty.model.DeviceDataEvent;
 import cn.xxt.gatewaynetty.netty.model.DeviceData;
 import cn.xxt.gatewaynetty.mqtt.parser.MqttMessageParser;
 import cn.xxt.gatewaynetty.mqtt.parser.MqttMessageParserFactory;

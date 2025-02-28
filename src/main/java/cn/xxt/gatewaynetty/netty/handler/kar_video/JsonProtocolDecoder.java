@@ -69,7 +69,6 @@ public class JsonProtocolDecoder extends ByteToMessageDecoder {
         int keyNumber = in.readInt();              // 密钥序号(4字节)
         short encryptionType = in.readShort();     // 加密类型(2字节)
         short dataLength = in.readShort();         // 数据长度(2字节)
-
         // 验证是否有足够的字节用于完整消息
         if (in.readableBytes() < dataLength) {
             in.resetReaderIndex();

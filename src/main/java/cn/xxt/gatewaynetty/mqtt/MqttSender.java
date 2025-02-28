@@ -68,6 +68,8 @@ public class MqttSender {
 
     /**
      * 构造函数
+     *
+     * @param mqttClient MQTT客户端对象
      */
     @Autowired
     public MqttSender(MqttClient mqttClient) {

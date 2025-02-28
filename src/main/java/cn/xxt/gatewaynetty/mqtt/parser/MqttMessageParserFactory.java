@@ -2,7 +2,6 @@ package cn.xxt.gatewaynetty.mqtt.parser;
 
 import cn.xxt.gatewaynetty.netty.exceptions.UnsupportedProtocolException;
 import cn.xxt.gatewaynetty.netty.protocol.ProtocolIdentifier;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;

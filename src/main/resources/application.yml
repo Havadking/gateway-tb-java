@@ -1,5 +1,7 @@
 netty:
   port: 5566
+  http_port: 12000
+  file_port: 12001
 
 mqtt:
   url: tcp://192.168.9.230:1883
