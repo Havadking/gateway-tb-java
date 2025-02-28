@@ -134,7 +134,7 @@
                   </excludes>
                 </filter>
               </filters>
-              <finalName>gateway-netty</finalName>
+              <finalName>gateway-cn.xxt.gatewaynetty.netty</finalName>
             </configuration>
           </execution>
         </executions>

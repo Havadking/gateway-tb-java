@@ -1,0 +1,26 @@
+netty:
+  port: 5566
+
+mqtt:
+  url: tcp://192.168.9.230:1883
+  client-id: thingsboard-gateway
+  username: test123
+
+
+spring:
+  application:
+    name: thingsboard-gateway
+
+  # Kafka配置
+  kafka:
+    bootstrap-servers: 192.168.3.143:9092
+    producer:
+      retries: 3
+      acks: all
+      batch-size: 16384
+      buffer-memory: 33554432
+    consumer:
+      group-id: device-data-group
+#      auto-offset-reset: earliest
+#      enable-auto-commit: true
+
