@@ -1,5 +1,5 @@
 <archetype>
-  <id>gateway-netty</id>
+  <id>gateway-cn.xxt.gatewaynetty.netty</id>
   <sources>
     <source>src/main/java/App.java</source>
   </sources>
