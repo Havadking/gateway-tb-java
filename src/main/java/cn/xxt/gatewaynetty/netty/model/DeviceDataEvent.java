@@ -1,7 +1,6 @@
 package cn.xxt.gatewaynetty.netty.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 /**
  * @program: gateway-cn.xxt.gatewaynetty.netty
@@ -10,8 +9,7 @@ import lombok.Setter;
  * @create: 2025-02-08 17:03
  **/
 
-@Getter
-@Setter
+@Data
 public class DeviceDataEvent {
     /**
      * 设备数据值

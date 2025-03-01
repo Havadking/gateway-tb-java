@@ -1,4 +1,4 @@
-package cn.xxt.gatewaynetty.netty.task;
+package cn.xxt.gatewaynetty.netty.videophone.task;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -191,7 +191,7 @@ public class TaskManager {
     }
 
     private void removeLastSentTask(String taskId) {
-        // Iterate through all devices and remove the last sent task if it matches the given taskId
+        // 遍历所有设备，如果匹配给定的taskId则移除最后发送的任务
         String taskJson = jedis.get(getTaskKey(taskId));
         if (taskJson != null) {
             try {

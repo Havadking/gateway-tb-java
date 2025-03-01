@@ -9,12 +9,11 @@ import cn.xxt.gatewaynetty.kafka.DeviceDataKafkaProducer;
 import cn.xxt.gatewaynetty.netty.model.DeviceData;
 import cn.xxt.gatewaynetty.netty.protocol.ProtocolIdentifier;
 import cn.xxt.gatewaynetty.netty.registry.DeviceRegistry;
-import cn.xxt.gatewaynetty.netty.task.Task;
-import cn.xxt.gatewaynetty.netty.task.TaskManager;
+import cn.xxt.gatewaynetty.netty.videophone.task.Task;
+import cn.xxt.gatewaynetty.netty.videophone.task.TaskManager;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -149,18 +148,15 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
         response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
 
-        ctx.writeAndFlush(response).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) {
-                if (future.isSuccess()) {
-                    LogUtils.logBusiness("响应发送成功:{}", HttpResponseStatus.OK.code());
-                    // 成功处理逻辑
-                    ctx.close();
-                } else {
-                    LogUtils.logError("响应发送失败: {}", future.cause(), future.cause().getMessage());
-                    // 发生错误时关闭连接
-                    ctx.close();
-                }
+        ctx.writeAndFlush(response).addListener((ChannelFutureListener) future -> {
+            if (future.isSuccess()) {
+                LogUtils.logBusiness("响应发送成功:{}", HttpResponseStatus.OK.code());
+                // 成功处理逻辑
+                ctx.close();
+            } else {
+                LogUtils.logError("响应发送失败: {}", future.cause(), future.cause().getMessage());
+                // 发生错误时关闭连接
+                ctx.close();
             }
         });
     }
@@ -211,6 +207,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
 
+    /**
+     * 从请求的JSON内容中获取设备ID
+     *
+     * @param jsonContent JSON格式的字符串内容
+     * @return 设备ID字符串，如果解析出错则返回null
+     */
     private String getDeviceIdFromRequest(String jsonContent) {
         try {
             // 使用Jackson解析JSON

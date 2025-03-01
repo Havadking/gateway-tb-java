@@ -1,4 +1,4 @@
-package cn.xxt.gatewaynetty.netty.http.file_tcp;
+package cn.xxt.gatewaynetty.netty.videophone.http.file_tcp;
 
 import cn.xxt.gatewaynetty.netty.config.RedisConfig;
 import cn.xxt.gatewaynetty.util.LogUtils;
@@ -45,7 +45,7 @@ public class FileDownloadDecoder extends ByteToMessageDecoder {
 
     @SuppressWarnings({"checkstyle:Regexp", "checkstyle:MagicNumber"})
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         // 获取 redis
         JedisPooled jedisPooled = RedisConfig.getJedisPool();
 
@@ -62,14 +62,14 @@ public class FileDownloadDecoder extends ByteToMessageDecoder {
         byte syncHeader = in.readByte();
         if (syncHeader != SYNC_HEADER) {
             in.resetReaderIndex();
-            throw new IllegalStateException("Invalid sync header: " + String.format("0x%02X", syncHeader));
+            throw new IllegalStateException("无效的同步头: " + String.format("0x%02X", syncHeader));
         }
 
         // 读取类型
         byte type = in.readByte();
         if (type != TYPE) {
             in.resetReaderIndex();
-            throw new IllegalStateException("Invalid type: " + String.format("0x%02X", type));
+            throw new IllegalStateException("无效的类型: " + String.format("0x%02X", type));
         }
 
         // 读取长度（N）
@@ -99,9 +99,12 @@ public class FileDownloadDecoder extends ByteToMessageDecoder {
         LogUtils.logBusiness("File id is {}", fileIdentifier);
 
         // todo 这个 key 应该是上面的 id， 为了测试先写死
-        String key = REDIS_KEY_PREFIX + "7680093057de4bdfa14dc5dcf4642ad6f73f0ddf-adbb-40fc-80e7-3a9ee3c9ef62";
+//        String key = REDIS_KEY_PREFIX + "7680093057de4bdfa14dc5dcf4642ad6f73f0ddf-adbb-40fc-80e7-3a9ee3c9ef62";
+        // 根据文件标识符从 Redis 中获取图像数据
+        String key = REDIS_KEY_PREFIX + fileIdentifier;
+        // 获取图像数据
         byte[] bytes = jedisPooled.get(key.getBytes());
-
+        // 发送图像响应数据
         sendImageResponse(ctx, fileIdentifier, bytes);
     }
 
@@ -152,7 +155,7 @@ public class FileDownloadDecoder extends ByteToMessageDecoder {
         for (int packetIndex = 0; packetIndex < totalPackets; packetIndex++) {
             int currentPacketDataLength = Math.min(ONE_MEGABYTE, all.length - packetIndex * ONE_MEGABYTE);
             // 同步头+类型+长度+包号+总包数+数据
-            int packetTotalLength = 2 + 2 + 2 + 2 + currentPacketDataLength;
+            int packetTotalLength = 1 + 1 + 2 + 2 + 2 + currentPacketDataLength;
             ByteBuf packet = ctx.alloc().buffer(packetTotalLength);
             // 构建下发数据
             packet.writeByte(0xa5);

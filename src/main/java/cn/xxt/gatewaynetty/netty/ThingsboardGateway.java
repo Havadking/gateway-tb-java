@@ -1,16 +1,15 @@
 package cn.xxt.gatewaynetty.netty;
 
-import cn.xxt.gatewaynetty.netty.config.GatewayConfig;
 import cn.xxt.gatewaynetty.netty.handler.ProtocolDetectionHandler;
-import cn.xxt.gatewaynetty.netty.http.HttpServer;
-import cn.xxt.gatewaynetty.netty.http.file_tcp.FileTcpServer;
+import cn.xxt.gatewaynetty.netty.videophone.http.HttpServer;
+import cn.xxt.gatewaynetty.netty.videophone.http.file_tcp.FileTcpServer;
 import cn.xxt.gatewaynetty.mqtt.MqttConnection;
 import cn.xxt.gatewaynetty.mqtt.MqttReceiver;
 import cn.xxt.gatewaynetty.mqtt.MqttSender;
 import cn.xxt.gatewaynetty.mqtt.parser.MqttMessageParserFactory;
 import cn.xxt.gatewaynetty.netty.protocol.ProtocolHandlerFactory;
 import cn.xxt.gatewaynetty.netty.registry.DeviceRegistry;
-import cn.xxt.gatewaynetty.netty.task.TaskManager;
+import cn.xxt.gatewaynetty.netty.videophone.task.TaskManager;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;

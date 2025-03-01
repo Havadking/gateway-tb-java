@@ -35,6 +35,11 @@ public class PackageAssembler {
         }
     }
 
+    /**
+     * 检查是否所有数据包都已接收完成
+     *
+     * @return 如果已接收的数据包数量等于总数据包数量，则返回true，否则返回false
+     */
     public boolean isComplete() {
         return receivedCount == packages.length;
     }

@@ -1,6 +1,5 @@
-package cn.xxt.gatewaynetty.netty.http.file_tcp;
+package cn.xxt.gatewaynetty.netty.videophone.http.file_tcp;
 
-import cn.xxt.gatewaynetty.netty.config.GatewayConfig;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;

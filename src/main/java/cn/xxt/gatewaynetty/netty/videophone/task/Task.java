@@ -1,4 +1,4 @@
-package cn.xxt.gatewaynetty.netty.task;
+package cn.xxt.gatewaynetty.netty.videophone.task;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

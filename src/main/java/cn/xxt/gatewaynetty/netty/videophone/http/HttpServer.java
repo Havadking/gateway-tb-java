@@ -1,11 +1,10 @@
-package cn.xxt.gatewaynetty.netty.http;
+package cn.xxt.gatewaynetty.netty.videophone.http;
 
-import cn.xxt.gatewaynetty.netty.config.GatewayConfig;
 import cn.xxt.gatewaynetty.netty.config.RedisConfig;
 import cn.xxt.gatewaynetty.netty.handler.kar_video.face.HttpRequestHandler;
 import cn.xxt.gatewaynetty.kafka.DeviceDataKafkaProducer;
 import cn.xxt.gatewaynetty.netty.registry.DeviceRegistry;
-import cn.xxt.gatewaynetty.netty.task.TaskManager;
+import cn.xxt.gatewaynetty.netty.videophone.task.TaskManager;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -97,14 +96,12 @@ public class HttpServer {
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-            // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(port).sync();
             LogUtils.logBusiness("HTTP server started on port {}", port);
             channel = f.channel();
 //            f.channel().closeFuture().sync();
 
         } catch (Exception e) {
-            // Exception here
             stop();
             throw e;
         }

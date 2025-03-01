@@ -9,8 +9,8 @@ import cn.xxt.gatewaynetty.netty.model.DeviceData;
 import cn.xxt.gatewaynetty.mqtt.parser.MqttMessageParser;
 import cn.xxt.gatewaynetty.mqtt.parser.MqttMessageParserFactory;
 import cn.xxt.gatewaynetty.netty.protocol.ProtocolIdentifier;
-import cn.xxt.gatewaynetty.netty.task.Task;
-import cn.xxt.gatewaynetty.netty.task.TaskManager;
+import cn.xxt.gatewaynetty.netty.videophone.task.Task;
+import cn.xxt.gatewaynetty.netty.videophone.task.TaskManager;
 import cn.xxt.gatewaynetty.util.LogUtils;
 import cn.xxt.gatewaynetty.kafka.DeviceDataKafkaProducer;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -97,9 +97,9 @@ public class MqttReceiver implements MqttCallback {
 
 
     /**
-     * This method is called when the connection to the server is lost.
+     * 当与服务器的连接丢失时调用此方法。
      *
-     * @param cause the reason behind the loss of connection.
+     * @param cause 连接丢失的原因。
      */
     @Override
     public void connectionLost(Throwable cause) {

@@ -49,17 +49,6 @@ public class AuthDeviceUtil {
     }
 
     /**
-     * 获取设备授权测试结果
-     *
-     * @param deviceNo 设备编号
-     * @return 设备授权测试是否通过，真表示通过，假表示不通过
-     * @throws Exception 方法执行过程中遇到异常时抛出
-     */
-    public static boolean getDeviceAuthTest(String deviceNo) throws Exception {
-        return true;
-    }
-
-    /**
      * 获取指定设备编号的数据流
      *
      * @param deviceNo 设备编号

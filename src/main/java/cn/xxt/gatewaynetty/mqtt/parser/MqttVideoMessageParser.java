@@ -21,6 +21,13 @@ import java.util.Map;
 
 public class MqttVideoMessageParser implements MqttMessageParser {
 
+    /**
+     * 解析接收到的MQTT消息为设备数据对象。
+     *
+     * @param message MQTT消息对象
+     * @return 解析后的设备数据对象
+     * @throws Exception 当解析过程中发生错误时抛出异常
+     */
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
         // 创建 ObjectMapper 用于 JSON 解析

@@ -16,6 +16,13 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 public class MqttNormalMessageParser implements MqttMessageParser {
 
+    /**
+     * 解析接收到的MQTT消息为设备数据对象
+     *
+     * @param message MQTT消息对象
+     * @return 解析后的设备数据对象
+     * @throws Exception 当解析过程发生错误时抛出异常
+     */
     @Override
     public DeviceData parseMessage(MqttMessage message) throws Exception {
         String messageContent = new String(message.getPayload());

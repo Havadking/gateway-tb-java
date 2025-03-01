@@ -79,7 +79,7 @@ public class KafkaConfig {
      * Kafka Admin客户端配置方法
      *
      * @return KafkaAdmin 实例，用于管理Kafka集群
-     */// Kafka Admin客户端配置
+     */
     @Bean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();

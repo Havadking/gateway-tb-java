@@ -63,9 +63,8 @@ public class ProtocolHandlerFactory {
      *
      * @param protocolId 协议标识符
      * @return 对应协议的通道处理器
-     * @throws Exception 当无法获取对应的通道处理器时抛出异常
      */
-    public List<ChannelHandler> getHandlers(ProtocolIdentifier protocolId) throws Exception {
+    public List<ChannelHandler> getHandlers(ProtocolIdentifier protocolId) {
         List<Supplier<ChannelHandler>> handlers = handlerFactories.get(protocolId);
         if (handlers == null) {
             throw new UnsupportedProtocolException("获取handler失败:" + protocolId);

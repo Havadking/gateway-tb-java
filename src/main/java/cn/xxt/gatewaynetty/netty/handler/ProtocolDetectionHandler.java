@@ -24,13 +24,13 @@ import java.util.List;
 @AllArgsConstructor
 public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
     /**
-     * 第一种协议的头标识字符
+     * 普通话机协议的头标识字符
      */
-    private static final byte PROTOCOL_A_HEADER = '*';  // 第一种协议以 '*' 开头
+    private static final byte PROTOCOL_A_HEADER = '*';
     /**
-     * 第二种协议的头标识字符，固定为 '@'。
+     * 视频话机协议的头标识字符，固定为 '@'。
      */
-    private static final byte PROTOCOL_B_HEADER = '@';  // 第二种协议以 '@' 开头
+    private static final byte PROTOCOL_B_HEADER = '@';
 
     /**
      * 协议处理器工厂
@@ -45,18 +45,18 @@ public class ProtocolDetectionHandler extends ChannelInboundHandlerAdapter {
         // 2. 从工厂中获取对应 Handler
         // 获取所有 handlers
         List<ChannelHandler> handlers = handlerFactory.getHandlers(protocolId);
-        // 获取特定类型的 gataway.handler
+        // 获取特定类型的 gateway.handler
         AuthenticationHandler authHandler = handlers.stream()
                 .filter(h -> h instanceof AuthenticationHandler)
                 .map(h -> (AuthenticationHandler) h)
                 .findFirst()
-                .orElseThrow(() -> new Exception("Authentication gataway.handler not found"));
+                .orElseThrow(() -> new Exception("Authentication gateway.handler not found"));
 
         DataInboundHandler dataHandler = handlers.stream()
                 .filter(h -> h instanceof DataInboundHandler)
                 .map(h -> (DataInboundHandler) h)
                 .findFirst()
-                .orElseThrow(() -> new Exception("Data gataway.handler not found"));
+                .orElseThrow(() -> new Exception("Data gateway.handler not found"));
 
         // 3. 超时断连机制 Handler
         IdleStateHandler idleStateHandler = new IdleStateHandler(GatewayConfig.READ_TIME_OUT, 0, 0);
