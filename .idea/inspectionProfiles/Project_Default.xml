@@ -58,6 +58,7 @@
           <option value="gateway-netty" />
           <option value="gateway-netty" />
           <option value="gateway-netty" />
+          <option value="gateway-netty" />
         </list>
       </option>
       <option name="ignoredPackages">
@@ -65,12 +66,14 @@
           <option value="io.netty:netty-codec-http2:4.1.97.Final" />
           <option value="io.netty:netty-codec-http:4.1.97.Final" />
           <option value="io.netty:netty-common:4.1.97.Final" />
+          <option value="io.netty:netty-handler:4.1.97.Final" />
         </list>
       </option>
       <option name="ignoredReasons">
         <list>
           <option value="其他" />
           <option value="处理中" />
+          <option value="固定在分支中" />
           <option value="固定在分支中" />
         </list>
       </option>

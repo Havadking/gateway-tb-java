@@ -38,4 +38,4 @@ build/
 logs/*
 
 ### TEST ###
-/src/main/java/test/*
+/src/main/java/cn/xxt/gatewaynetty/netty/test/*
